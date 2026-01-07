@@ -141,7 +141,7 @@ export default function SalesPage() {
                   border: '1px solid #475569',
                   borderRadius: '8px'
                 }}
-                formatter={(value) => `$${value.toLocaleString()}`}
+                formatter={(value) => `$${(value || 0).toLocaleString()}`}
               />
             </PieChart>
           </ResponsiveContainer>
