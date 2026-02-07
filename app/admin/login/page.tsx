@@ -2,10 +2,11 @@
 
 import { Suspense, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { Globe, Loader2 } from 'lucide-react'
+import { Globe, Loader2, Eye, EyeOff } from 'lucide-react'
 
 function AdminLoginForm() {
   const [password, setPassword] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const router = useRouter()
@@ -32,7 +33,8 @@ function AdminLoginForm() {
       }
       const data = await res.json().catch(() => ({}))
       if (!res.ok) {
-        setError(data.error || 'Login failed')
+        const msg = data.error || `Login failed (${res.status})`
+        setError(res.status === 500 ? `${msg} Check Vercel env (ADMIN_PASSWORD, ADMIN_SESSION_SECRET) and redeploy.` : msg)
         setLoading(false)
         return
       }
@@ -65,16 +67,26 @@ function AdminLoginForm() {
             <label htmlFor="password" className="block text-sm font-medium text-slate-300 mb-2">
               Password
             </label>
-            <input
-              id="password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="Admin password"
-              autoComplete="current-password"
-              className="w-full px-4 py-3 bg-[#223249] border border-slate-700/50 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-[#0d6cf2]"
-              required
-            />
+            <div className="relative">
+              <input
+                id="password"
+                type={showPassword ? 'text' : 'password'}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Admin password"
+                autoComplete="current-password"
+                className="w-full px-4 py-3 pr-12 bg-[#223249] border border-slate-700/50 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-[#0d6cf2]"
+                required
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword((p) => !p)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded text-slate-400 hover:text-white focus:outline-none focus:ring-2 focus:ring-[#0d6cf2] focus:ring-inset"
+                aria-label={showPassword ? 'Hide password' : 'Show password'}
+              >
+                {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+              </button>
+            </div>
           </div>
           {error && (
             <p className="text-sm text-red-400">{error}</p>

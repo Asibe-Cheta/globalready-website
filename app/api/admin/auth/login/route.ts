@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createAdminSessionToken, getAdminSessionCookieAttributes, COOKIE_NAME } from '@/lib/admin-session-sign'
+import { createAdminSessionToken, COOKIE_NAME } from '@/lib/admin-session-sign'
 
 export async function POST(request: NextRequest) {
-  const password = process.env.ADMIN_PASSWORD
-  if (!password) {
-    return NextResponse.json({ error: 'Admin login not configured' }, { status: 500 })
+  const envPassword = process.env.ADMIN_PASSWORD
+  if (!envPassword) {
+    return NextResponse.json({ error: 'Admin login not configured. Set ADMIN_PASSWORD in Vercel.' }, { status: 500 })
   }
   let body: { password?: string }
   try {
@@ -12,7 +12,9 @@ export async function POST(request: NextRequest) {
   } catch {
     return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 })
   }
-  if (body.password !== password) {
+  const submitted = typeof body.password === 'string' ? body.password.trim() : ''
+  const expected = envPassword.trim()
+  if (submitted !== expected) {
     return NextResponse.json({ error: 'Invalid password' }, { status: 401 })
   }
   const token = createAdminSessionToken()
