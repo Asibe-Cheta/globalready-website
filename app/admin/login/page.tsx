@@ -36,7 +36,7 @@ function AdminLoginForm() {
       if (!res.ok) {
         let msg = data.error || `Login failed (${res.status})`
         if (res.status === 0) {
-          msg = 'No response from server. Redeploy on Vercel after saving env vars, then try again. If it persists, open DevTools → Network, try Sign in, and check the "login" request.'
+          msg = 'No response from server. Redeploy on Vercel (env vars apply only after redeploy), then try again. Open /api/admin/auth/login in a new tab to test if the API is reachable.'
         } else if (res.status === 500) {
           msg = `${msg} Check Vercel env (ADMIN_PASSWORD, ADMIN_SESSION_SECRET) and redeploy.`
         }
