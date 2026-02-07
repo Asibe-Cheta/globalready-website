@@ -1,10 +1,19 @@
 import { adminApiFetch } from '@/lib/admin-api';
+import { verifyAdminSession } from '@/lib/admin-session';
 import { NextRequest, NextResponse } from 'next/server';
+
+/** Require valid admin session; returns 401 response or null if valid. */
+async function requireAdmin(req: NextRequest, path: string): Promise<NextResponse | null> {
+  const valid = await verifyAdminSession(req);
+  if (!valid) {
+    return NextResponse.json({ error: 'Unauthorized. Please log in at /admin/login' }, { status: 401 });
+  }
+  return null;
+}
 
 /**
  * Proxy to Supabase Admin API. Forwards path and query string.
- * Example: GET /api/admin/dashboard/stats -> Admin API GET /dashboard/stats
- * Example: GET /api/admin/users?page=1&search=john -> Admin API GET /users?page=1&search=john
+ * Session is verified here (Node) so the Cookie header is available.
  */
 export async function GET(
   _req: NextRequest,
@@ -12,7 +21,9 @@ export async function GET(
 ) {
   try {
     const { path: pathSegments } = await context.params;
-    const path = Array.isArray(pathSegments) ? pathSegments.join('/') : '';
+    const path = Array.isArray(pathSegments) ? pathSegments.join('/') || '' : '';
+    const authError = await requireAdmin(_req, path);
+    if (authError) return authError;
     const url = new URL(_req.url);
     const search = url.searchParams.toString();
     const res = await adminApiFetch(path, {
@@ -34,6 +45,8 @@ export async function POST(
   try {
     const { path: pathSegments } = await context.params;
     const path = Array.isArray(pathSegments) ? pathSegments.join('/') : '';
+    const authError = await requireAdmin(req, path);
+    if (authError) return authError;
     const body = await req.json().catch(() => ({}));
     const res = await adminApiFetch(path, { method: 'POST', body });
     const data = await res.json().catch(() => ({}));
@@ -51,6 +64,8 @@ export async function PUT(
   try {
     const { path: pathSegments } = await context.params;
     const path = Array.isArray(pathSegments) ? pathSegments.join('/') : '';
+    const authError = await requireAdmin(req, path);
+    if (authError) return authError;
     const body = await req.json().catch(() => ({}));
     const res = await adminApiFetch(path, { method: 'PUT', body });
     const data = await res.json().catch(() => ({}));
@@ -68,6 +83,8 @@ export async function PATCH(
   try {
     const { path: pathSegments } = await context.params;
     const path = Array.isArray(pathSegments) ? pathSegments.join('/') : '';
+    const authError = await requireAdmin(req, path);
+    if (authError) return authError;
     const body = await req.json().catch(() => ({}));
     const res = await adminApiFetch(path, { method: 'PATCH', body });
     const data = await res.json().catch(() => ({}));
@@ -85,6 +102,8 @@ export async function DELETE(
   try {
     const { path: pathSegments } = await context.params;
     const path = Array.isArray(pathSegments) ? pathSegments.join('/') : '';
+    const authError = await requireAdmin(_req, path);
+    if (authError) return authError;
     const res = await adminApiFetch(path, { method: 'DELETE' });
     const data = await res.json().catch(() => ({}));
     return NextResponse.json(data, { status: res.status });

@@ -3,14 +3,11 @@ import type { NextRequest } from 'next/server'
 import { verifyAdminSession } from '@/lib/admin-session'
 
 const ADMIN_LOGIN = '/admin/login'
-const API_AUTH_LOGIN = '/api/admin/auth/login'
-const API_AUTH_LOGOUT = '/api/admin/auth/logout'
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
 
-  // Allow login page and auth API without session
-  if (pathname === ADMIN_LOGIN || pathname === API_AUTH_LOGIN || pathname === API_AUTH_LOGOUT) {
+  if (pathname === ADMIN_LOGIN) {
     return NextResponse.next()
   }
 
@@ -25,18 +22,10 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next()
   }
 
-  // Protect /api/admin (all proxy routes except auth)
-  if (pathname.startsWith('/api/admin')) {
-    const valid = await verifyAdminSession(request)
-    if (!valid) {
-      return NextResponse.json({ error: 'Unauthorized. Please log in at /admin/login' }, { status: 401 })
-    }
-    return NextResponse.next()
-  }
-
+  // /api/admin is protected in the API route (Node) so cookies are available there
   return NextResponse.next()
 }
 
 export const config = {
-  matcher: ['/admin/:path*', '/api/admin/:path*'],
+  matcher: ['/admin/:path*'],
 }
