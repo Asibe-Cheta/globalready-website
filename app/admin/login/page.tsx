@@ -36,7 +36,7 @@ function AdminLoginForm() {
       if (!res.ok) {
         let msg = data.error || `Login failed (${res.status})`
         if (res.status === 0) {
-          msg = 'No response from server. Redeploy on Vercel (env vars apply only after redeploy), then try again. Open /api/admin/auth/login in a new tab to test if the API is reachable.'
+          msg = 'No response from server. Try: 1) Use https://www.globalready.tech (if you are on globalready.tech without www). 2) In a new tab open /api/health — if you see {"status":"ok"} the API works on this domain; then try /api/admin/auth/login.'
         } else if (res.status === 500) {
           msg = `${msg} Check Vercel env (ADMIN_PASSWORD, ADMIN_SESSION_SECRET) and redeploy.`
         }
