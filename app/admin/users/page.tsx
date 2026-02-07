@@ -39,7 +39,7 @@ export default function UsersPage() {
     try {
       const params = new URLSearchParams({ page: String(page), limit: '20' })
       if (search.trim()) params.set('search', search.trim())
-      const res = await fetch(`/api/admin/users?${params}`)
+      const res = await fetch(`/api/admin/users?${params}`, { credentials: 'include' })
       if (!res.ok) {
         const data = await res.json().catch(() => ({}))
         throw new Error(data.error || 'Failed to load users')

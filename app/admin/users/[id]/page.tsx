@@ -39,7 +39,7 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
       setLoading(true)
       setError(null)
       try {
-        const res = await fetch(`/api/admin/users/${id}`)
+        const res = await fetch(`/api/admin/users/${id}`, { credentials: 'include' })
         if (!res.ok) {
           const j = await res.json().catch(() => ({}))
           throw new Error(j.error || 'Failed to load user')

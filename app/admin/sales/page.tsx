@@ -42,9 +42,9 @@ export default function SalesPage() {
       setError(null)
       try {
         const [statsRes, revenueRes, paymentsRes] = await Promise.all([
-          fetch('/api/admin/dashboard/stats'),
-          fetch(`/api/admin/dashboard/revenue?days=${daysFilter}`),
-          fetch('/api/admin/payments?limit=10'),
+          fetch('/api/admin/dashboard/stats', { credentials: 'include' }),
+          fetch(`/api/admin/dashboard/revenue?days=${daysFilter}`, { credentials: 'include' }),
+          fetch('/api/admin/payments?limit=10', { credentials: 'include' }),
         ])
         if (cancelled) return
         if (!statsRes.ok) throw new Error((await statsRes.json().catch(() => ({}))).error || 'Failed to load stats')

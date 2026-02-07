@@ -29,7 +29,7 @@ export default function SkillsPage() {
       setLoading(true)
       setError(null)
       try {
-        const res = await fetch('/api/admin/dashboard/skills')
+        const res = await fetch('/api/admin/dashboard/skills', { credentials: 'include' })
         if (!res.ok) {
           const j = await res.json().catch(() => ({}))
           throw new Error(j.error || 'Failed to load skills insights')

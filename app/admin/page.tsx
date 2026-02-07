@@ -38,8 +38,8 @@ export default function AdminDashboard() {
       setError(null)
       try {
         const [statsRes, revenueRes] = await Promise.all([
-          fetch('/api/admin/dashboard/stats'),
-          fetch(`/api/admin/dashboard/revenue?days=${daysFilter}`),
+          fetch('/api/admin/dashboard/stats', { credentials: 'include' }),
+          fetch(`/api/admin/dashboard/revenue?days=${daysFilter}`, { credentials: 'include' }),
         ])
         if (cancelled) return
         if (!statsRes.ok) {

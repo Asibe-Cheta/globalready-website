@@ -42,13 +42,19 @@ export async function POST(request: NextRequest) {
     const redirectTo = request.nextUrl.searchParams.get('from') || '/admin'
     // Return 200 + JSON instead of 302 so fetch always gets a proper response (avoids status 0 in some browsers)
     const res = NextResponse.json({ success: true, redirect: redirectTo })
-    res.cookies.set(COOKIE_NAME, token, {
+    const host = request.nextUrl.hostname || ''
+    const cookieOpts: { path: string; httpOnly: boolean; sameSite: 'lax'; maxAge: number; secure?: boolean; domain?: string } = {
       path: '/',
       httpOnly: true,
       sameSite: 'lax',
       maxAge: 24 * 60 * 60, // 24h
       secure: process.env.NODE_ENV === 'production',
-    })
+    }
+    // Share cookie across www and apex (e.g. www.globalready.tech and globalready.tech)
+    if (process.env.NODE_ENV === 'production' && (host === 'globalready.tech' || host === 'www.globalready.tech')) {
+      cookieOpts.domain = '.globalready.tech'
+    }
+    res.cookies.set(COOKIE_NAME, token, cookieOpts)
     return res
   } catch (err) {
     console.error('Login API error:', err)
