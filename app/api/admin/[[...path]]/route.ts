@@ -1,11 +1,23 @@
 import { adminApiFetch } from '@/lib/admin-api';
-import { verifyAdminSessionNode } from '@/lib/admin-session-sign';
+import { verifyAdminSessionNode, type VerifyResult } from '@/lib/admin-session-sign';
 import { NextRequest, NextResponse } from 'next/server';
+
+export const runtime = 'nodejs';
 
 /** Require valid admin session; returns 401 response or null if valid. Uses Node crypto so it matches login signing. */
 function requireAdmin(req: NextRequest): NextResponse | null {
-  if (!verifyAdminSessionNode(req)) {
-    return NextResponse.json({ error: 'Unauthorized. Please log in at /admin/login' }, { status: 401 });
+  const result = verifyAdminSessionNode(req);
+  if (result !== 'ok') {
+    const message =
+      result === 'no_secret'
+        ? 'Server misconfiguration. Set ADMIN_SESSION_SECRET in Vercel and redeploy.'
+        : result === 'no_cookie'
+          ? 'No session cookie. Log in at /admin/login from the same domain (e.g. www.globalready.tech).'
+          : 'Session expired or invalid. Log out and log in again.';
+    return NextResponse.json(
+      { error: message, code: result },
+      { status: 401 }
+    );
   }
   return null;
 }

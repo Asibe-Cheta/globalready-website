@@ -45,7 +45,14 @@ export function getAdminSessionCookie(request: Request): string | null {
   const cookieHeader = request.headers.get('cookie')
   if (!cookieHeader) return null
   const match = cookieHeader.match(new RegExp(`(?:^|;\\s*)${COOKIE_NAME}=([^;]*)`))
-  return match ? match[1].trim() : null
+  if (!match) return null
+  const raw = match[1].trim()
+  // Next.js / browsers may encode cookie values; decode so we get the raw token back
+  try {
+    return decodeURIComponent(raw)
+  } catch {
+    return raw
+  }
 }
 
 /**
