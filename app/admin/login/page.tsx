@@ -1,0 +1,96 @@
+'use client'
+
+import { useState } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
+import { Globe, Loader2 } from 'lucide-react'
+
+export default function AdminLoginPage() {
+  const [password, setPassword] = useState('')
+  const [error, setError] = useState('')
+  const [loading, setLoading] = useState(false)
+  const router = useRouter()
+  const searchParams = useSearchParams()
+  const from = searchParams.get('from') || '/admin'
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    setError('')
+    setLoading(true)
+    try {
+      const loginUrl = new URL('/api/admin/auth/login', window.location.origin)
+      loginUrl.searchParams.set('from', from)
+      const res = await fetch(loginUrl.toString(), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password }),
+        redirect: 'manual',
+      })
+      if (res.status === 302) {
+        const location = res.headers.get('Location') || '/admin'
+        window.location.href = location
+        return
+      }
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) {
+        setError(data.error || 'Login failed')
+        setLoading(false)
+        return
+      }
+      router.push(from)
+      router.refresh()
+    } catch {
+      setError('Something went wrong')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <div className="min-h-screen bg-[#101722] flex items-center justify-center p-4">
+      <div className="w-full max-w-sm">
+        <div className="flex items-center justify-center gap-3 mb-8">
+          <div className="h-12 w-12 bg-[#0d6cf2] rounded-xl flex items-center justify-center">
+            <Globe className="w-6 h-6 text-white" />
+          </div>
+          <div>
+            <h1 className="text-xl font-bold text-white">GlobalReady</h1>
+            <p className="text-slate-400 text-sm">Admin sign in</p>
+          </div>
+        </div>
+        <form
+          onSubmit={handleSubmit}
+          className="bg-[#1a2432] border border-slate-700/50 rounded-2xl p-6 space-y-4"
+        >
+          <div>
+            <label htmlFor="password" className="block text-sm font-medium text-slate-300 mb-2">
+              Password
+            </label>
+            <input
+              id="password"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Admin password"
+              autoComplete="current-password"
+              className="w-full px-4 py-3 bg-[#223249] border border-slate-700/50 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-[#0d6cf2]"
+              required
+            />
+          </div>
+          {error && (
+            <p className="text-sm text-red-400">{error}</p>
+          )}
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full py-3 bg-[#0d6cf2] text-white font-medium rounded-lg hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-[#0d6cf2] focus:ring-offset-2 focus:ring-offset-[#1a2432] disabled:opacity-50 flex items-center justify-center gap-2"
+          >
+            {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Sign in'}
+          </button>
+        </form>
+        <p className="text-slate-500 text-xs text-center mt-6">
+          Contact your team for the admin password.
+        </p>
+      </div>
+    </div>
+  )
+}

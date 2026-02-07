@@ -31,6 +31,11 @@ export default function AdminLayout({
 }) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const pathname = usePathname()
+  const isLoginPage = pathname === '/admin/login'
+
+  if (isLoginPage) {
+    return <>{children}</>
+  }
 
   return (
     <div className="min-h-screen bg-[#101722]">
@@ -87,10 +92,13 @@ export default function AdminLayout({
               <Settings className="w-5 h-5" />
               <span className="font-medium">Settings</span>
             </button>
-            <button className="flex items-center gap-3 px-4 py-3 rounded-lg text-slate-400 hover:bg-[#223249] hover:text-white transition-colors w-full">
+            <a
+              href="/api/admin/auth/logout"
+              className="flex items-center gap-3 px-4 py-3 rounded-lg text-slate-400 hover:bg-[#223249] hover:text-white transition-colors w-full"
+            >
               <LogOut className="w-5 h-5" />
               <span className="font-medium">Logout</span>
-            </button>
+            </a>
           </div>
         </div>
       </aside>
