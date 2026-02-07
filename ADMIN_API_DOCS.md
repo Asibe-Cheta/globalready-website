@@ -605,3 +605,13 @@ async function getUsers(page = 1, search = '') {
 | `enrollment_count` | integer | Auto | 0 | Number of enrollments |
 | `rating` | number | Auto | 0 | Average rating |
 | `rating_count` | integer | Auto | 0 | Number of ratings |
+
+---
+
+## Note for mobile team: course data source
+
+Course data for the app comes from the **same Admin API** (Supabase) that the website admin dashboard uses:
+
+- **API base:** `GET` / `POST` / `PUT` / `PATCH` / `DELETE` on `/courses` and `/courses/:id` (see “2. Courses (CRUD)” above).
+- **Auth:** Use `x-admin-key` (or Supabase service role) when calling the Admin API directly. The mobile app does **not** use the website’s login or session.
+- **Website admin:** The admin dashboard at the website calls this API via a Next.js proxy at `/api/admin/courses` (with session cookie). Courses added or edited in the admin dashboard are stored in the same Supabase tables and are the same data the mobile app receives when it fetches courses from the Admin API.
