@@ -18,7 +18,7 @@ function AdminLoginForm() {
     setError('')
     setLoading(true)
     try {
-      const loginUrl = new URL('/api/admin/auth/login', window.location.origin)
+      const loginUrl = new URL('/api/auth/login', window.location.origin)
       loginUrl.searchParams.set('from', from)
       const res = await fetch(loginUrl.toString(), {
         method: 'POST',
@@ -36,7 +36,7 @@ function AdminLoginForm() {
       if (!res.ok) {
         let msg = data.error || `Login failed (${res.status})`
         if (res.status === 0) {
-          msg = 'No response from server. Try: 1) Use https://www.globalready.tech (if you are on globalready.tech without www). 2) In a new tab open /api/health — if you see {"status":"ok"} the API works on this domain; then try /api/admin/auth/login.'
+          msg = 'No response from server. Try https://www.globalready.tech if you use globalready.tech without www. Test: open /api/auth/login in a new tab to confirm the login API is reachable.'
         } else if (res.status === 500) {
           msg = `${msg} Check Vercel env (ADMIN_PASSWORD, ADMIN_SESSION_SECRET) and redeploy.`
         }
