@@ -34,12 +34,15 @@ export async function adminApiFetch(
   const base = getBaseUrl();
   const key = getAdminKey();
   const pathClean = path.replace(/^\//, '');
-  const query = searchParams
-    ? typeof searchParams === 'string'
-      ? (searchParams.startsWith('?') ? searchParams : `?${searchParams}`)
-      : searchParams.toString()
-        ? `?${searchParams.toString()}`
-        : '';
+  let query = '';
+  if (searchParams) {
+    if (typeof searchParams === 'string') {
+      query = searchParams.startsWith('?') ? searchParams : `?${searchParams}`;
+    } else {
+      const str = searchParams.toString();
+      query = str ? `?${str}` : '';
+    }
+  }
   const url = `${base}/${pathClean}${query}`;
 
   const headers: Record<string, string> = {

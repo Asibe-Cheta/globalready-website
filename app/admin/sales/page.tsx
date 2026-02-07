@@ -168,7 +168,7 @@ export default function SalesPage() {
                   border: '1px solid #475569',
                   borderRadius: '8px',
                 }}
-                formatter={(value: number, name: string) => [name === 'revenue' ? formatCents(value * 100) : value, name]}
+                formatter={(value?: number, name?: string) => [name === 'Revenue' && value != null ? formatCents(value * 100) : value ?? '', name ?? '']}
               />
               <Bar yAxisId="left" dataKey="revenue" fill="#0d6cf2" radius={[8, 8, 0, 0]} name="Revenue" />
               <Bar yAxisId="right" dataKey="orders" fill="#0bda5e" radius={[8, 8, 0, 0]} name="Orders" />

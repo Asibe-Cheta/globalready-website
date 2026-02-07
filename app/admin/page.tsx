@@ -189,7 +189,7 @@ export default function AdminDashboard() {
                   border: '1px solid #475569',
                   borderRadius: '8px',
                 }}
-                formatter={(value: number) => [formatCents(value * 100), 'Revenue']}
+                formatter={(value: number | undefined) => [value != null ? formatCents(value * 100) : '', 'Revenue']}
                 labelFormatter={(_, payload) => payload?.[0]?.payload?.fullDate}
               />
               <Line
