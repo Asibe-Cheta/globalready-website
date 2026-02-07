@@ -25,6 +25,7 @@ function AdminLoginForm() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ password }),
         redirect: 'manual',
+        credentials: 'same-origin',
       })
       if (res.status === 302) {
         const location = res.headers.get('Location') || '/admin'
@@ -33,8 +34,13 @@ function AdminLoginForm() {
       }
       const data = await res.json().catch(() => ({}))
       if (!res.ok) {
-        const msg = data.error || `Login failed (${res.status})`
-        setError(res.status === 500 ? `${msg} Check Vercel env (ADMIN_PASSWORD, ADMIN_SESSION_SECRET) and redeploy.` : msg)
+        let msg = data.error || `Login failed (${res.status})`
+        if (res.status === 0) {
+          msg = 'No response from server. Redeploy on Vercel after saving env vars, then try again. If it persists, open DevTools → Network, try Sign in, and check the "login" request.'
+        } else if (res.status === 500) {
+          msg = `${msg} Check Vercel env (ADMIN_PASSWORD, ADMIN_SESSION_SECRET) and redeploy.`
+        }
+        setError(msg)
         setLoading(false)
         return
       }

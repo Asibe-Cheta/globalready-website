@@ -1,3 +1,5 @@
+// Supabase Edge Function (Deno) — excluded from Next.js build. Deploy: supabase functions deploy notify-admin
+// @ts-nocheck
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 const corsHeaders = {
