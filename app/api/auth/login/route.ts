@@ -40,7 +40,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Session not configured. Set ADMIN_SESSION_SECRET in Vercel and redeploy.' }, { status: 500 })
     }
     const redirectTo = request.nextUrl.searchParams.get('from') || '/admin'
-    const res = NextResponse.redirect(new URL(redirectTo, request.url), 302)
+    // Return 200 + JSON instead of 302 so fetch always gets a proper response (avoids status 0 in some browsers)
+    const res = NextResponse.json({ success: true, redirect: redirectTo })
     res.cookies.set(COOKIE_NAME, token, {
       path: '/',
       httpOnly: true,

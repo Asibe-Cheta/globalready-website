@@ -24,14 +24,8 @@ function AdminLoginForm() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ password }),
-        redirect: 'manual',
         credentials: 'same-origin',
       })
-      if (res.status === 302) {
-        const location = res.headers.get('Location') || '/admin'
-        window.location.href = location
-        return
-      }
       const data = await res.json().catch(() => ({}))
       if (!res.ok) {
         let msg = data.error || `Login failed (${res.status})`
@@ -42,6 +36,10 @@ function AdminLoginForm() {
         }
         setError(msg)
         setLoading(false)
+        return
+      }
+      if (data.success && data.redirect) {
+        window.location.href = data.redirect
         return
       }
       router.push(from)
