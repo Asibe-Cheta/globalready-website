@@ -45,7 +45,9 @@ export async function adminApiFetch(
   }
   const url = `${base}/${pathClean}${query}`;
 
+  // Supabase Edge Function gateway requires Authorization; our function also accepts x-admin-key
   const headers: Record<string, string> = {
+    'Authorization': `Bearer ${key}`,
     'x-admin-key': key,
     'Content-Type': 'application/json',
   };
