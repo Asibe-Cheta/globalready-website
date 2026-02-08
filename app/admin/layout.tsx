@@ -24,6 +24,7 @@ const navigation = [
   { name: 'Sales', href: '/admin/sales', icon: TrendingUp },
   { name: 'Analytics', href: '/admin/analytics', icon: BarChart3 },
   { name: 'Skills', href: '/admin/skills', icon: GraduationCap },
+  { name: 'Settings', href: '/admin/settings', icon: Settings },
 ]
 
 export default function AdminLayout({
@@ -90,10 +91,6 @@ export default function AdminLayout({
 
           {/* Footer */}
           <div className="p-4 border-t border-slate-700/50 space-y-1">
-            <button className="flex items-center gap-3 px-4 py-3 rounded-lg text-slate-400 hover:bg-[#223249] hover:text-white transition-colors w-full">
-              <Settings className="w-5 h-5" />
-              <span className="font-medium">Settings</span>
-            </button>
             <a
               href="/api/admin/auth/logout"
               className="flex items-center gap-3 px-4 py-3 rounded-lg text-slate-400 hover:bg-[#223249] hover:text-white transition-colors w-full"
@@ -124,7 +121,7 @@ export default function AdminLayout({
                 </div>
                 <div className="hidden sm:block">
                   <p className="text-sm font-medium text-white">Admin User</p>
-                  <p className="text-xs text-slate-400">admin@globalready.com</p>
+                  <p className="text-xs text-slate-400">admin@globalready.tech</p>
                 </div>
               </div>
             </div>

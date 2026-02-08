@@ -398,6 +398,32 @@ async function updateRegistrationStatus(id: string, body: any) {
   return jsonResponse(data);
 }
 
+// --- SETTINGS ---
+
+async function getSettings() {
+  const supabase = getSupabase();
+  const { data, error } = await supabase
+    .from('admin_settings')
+    .select('key, value')
+    .in('key', ['admin_emails']);
+  if (error) return errorResponse(error.message, 500);
+  const adminEmails = (data?.find((r) => r.key === 'admin_emails')?.value as string[] | null) || [];
+  return jsonResponse({ admin_emails: adminEmails });
+}
+
+async function updateSettings(body: { admin_emails?: string[] }) {
+  const emails = body.admin_emails;
+  if (!Array.isArray(emails)) return errorResponse('admin_emails must be an array of strings', 400);
+  const valid = emails.every((e) => typeof e === 'string' && e.includes('@'));
+  if (!valid) return errorResponse('Each admin_emails entry must be a valid email string', 400);
+  const supabase = getSupabase();
+  const { error } = await supabase
+    .from('admin_settings')
+    .upsert({ key: 'admin_emails', value: emails, updated_at: new Date().toISOString() }, { onConflict: 'key' });
+  if (error) return errorResponse(error.message, 500);
+  return jsonResponse({ admin_emails: emails });
+}
+
 // --- ASSESSMENTS ---
 
 async function getAssessments(url: URL) {
@@ -511,6 +537,14 @@ Deno.serve(async (req) => {
     // --- ASSESSMENTS ---
     if (path === 'assessments' && method === 'GET') {
       return getAssessments(url);
+    }
+
+    // --- SETTINGS ---
+    if (path === 'settings' && method === 'GET') {
+      return getSettings();
+    }
+    if (path === 'settings' && (method === 'PATCH' || method === 'PUT')) {
+      return updateSettings(body);
     }
 
     return errorResponse(`Route not found: ${method} /${path}`, 404);
