@@ -7,6 +7,7 @@
 ALTER TABLE public.courses
   ADD COLUMN IF NOT EXISTS subtitle TEXT,
   ADD COLUMN IF NOT EXISTS duration TEXT,
+  ADD COLUMN IF NOT EXISTS image_url TEXT,
   ADD COLUMN IF NOT EXISTS thumbnail_url TEXT,
   ADD COLUMN IF NOT EXISTS instructor TEXT,
   ADD COLUMN IF NOT EXISTS instructor_avatar TEXT,

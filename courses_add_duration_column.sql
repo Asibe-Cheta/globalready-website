@@ -1,4 +1,4 @@
--- Quick fix: Add missing 'duration' column to courses (e.g. "8 weeks")
--- Run this in Supabase SQL Editor if you see: "Could not find the 'duration' column of 'courses' in the schema cache"
+-- Quick fix: Add missing columns to courses (run in Supabase SQL Editor if Add course fails with schema cache errors)
 ALTER TABLE public.courses
-  ADD COLUMN IF NOT EXISTS duration TEXT;
+  ADD COLUMN IF NOT EXISTS duration TEXT,
+  ADD COLUMN IF NOT EXISTS image_url TEXT;
