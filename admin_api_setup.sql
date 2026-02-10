@@ -2,11 +2,15 @@
 -- Run this SQL in your Supabase SQL Editor to set up admin infrastructure
 
 -- ============================================================
--- 1. Expand courses table with additional fields
+-- 1. Expand courses table with all fields expected by Admin API
 -- ============================================================
 ALTER TABLE public.courses
   ADD COLUMN IF NOT EXISTS subtitle TEXT,
+  ADD COLUMN IF NOT EXISTS description TEXT,
+  ADD COLUMN IF NOT EXISTS category TEXT,
   ADD COLUMN IF NOT EXISTS duration TEXT,
+  ADD COLUMN IF NOT EXISTS duration_hours NUMERIC DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS total_lessons INTEGER DEFAULT 0,
   ADD COLUMN IF NOT EXISTS image_url TEXT,
   ADD COLUMN IF NOT EXISTS thumbnail_url TEXT,
   ADD COLUMN IF NOT EXISTS instructor TEXT,
@@ -14,13 +18,12 @@ ALTER TABLE public.courses
   ADD COLUMN IF NOT EXISTS price INTEGER DEFAULT 0,
   ADD COLUMN IF NOT EXISTS currency TEXT DEFAULT 'USD',
   ADD COLUMN IF NOT EXISTS level TEXT DEFAULT 'beginner',
-  ADD COLUMN IF NOT EXISTS duration_hours NUMERIC DEFAULT 0,
-  ADD COLUMN IF NOT EXISTS total_lessons INTEGER DEFAULT 0,
   ADD COLUMN IF NOT EXISTS syllabus JSONB DEFAULT '[]'::jsonb,
   ADD COLUMN IF NOT EXISTS prerequisites TEXT[] DEFAULT '{}',
   ADD COLUMN IF NOT EXISTS learning_outcomes TEXT[] DEFAULT '{}',
   ADD COLUMN IF NOT EXISTS tags TEXT[] DEFAULT '{}',
   ADD COLUMN IF NOT EXISTS featured BOOLEAN DEFAULT false,
+  ADD COLUMN IF NOT EXISTS is_active BOOLEAN DEFAULT true,
   ADD COLUMN IF NOT EXISTS enrollment_count INTEGER DEFAULT 0,
   ADD COLUMN IF NOT EXISTS rating NUMERIC DEFAULT 0,
   ADD COLUMN IF NOT EXISTS rating_count INTEGER DEFAULT 0;
