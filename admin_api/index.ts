@@ -398,6 +398,164 @@ async function updateRegistrationStatus(id: string, body: any) {
   return jsonResponse(data);
 }
 
+// --- JOBS ---
+
+async function getJobs(url: URL) {
+  const supabase = getSupabase();
+  const page = parseInt(url.searchParams.get('page') || '1');
+  const limit = parseInt(url.searchParams.get('limit') || '50');
+  const offset = (page - 1) * limit;
+  const country = url.searchParams.get('country');
+  const sector = url.searchParams.get('sector');
+  const search = url.searchParams.get('search');
+  const includeInactive = url.searchParams.get('include_inactive') === 'true';
+
+  let query = supabase.from('jobs').select('*', { count: 'exact' });
+
+  if (!includeInactive) query = query.eq('is_active', true);
+  if (country) query = query.eq('country', country);
+  if (sector) query = query.eq('sector', sector);
+  if (search && search.trim()) {
+    query = query.or(`title.ilike.%${search.trim()}%,company.ilike.%${search.trim()}%`);
+  }
+
+  const { data, error, count } = await query
+    .order('is_featured', { ascending: false })
+    .order('posted_date', { ascending: false, nullsFirst: false })
+    .range(offset, offset + limit - 1);
+
+  if (error) return errorResponse(error.message, 500);
+
+  return jsonResponse({
+    jobs: data,
+    pagination: { page, limit, total: count || 0 },
+  });
+}
+
+async function getJobById(id: string) {
+  const supabase = getSupabase();
+  const { data, error } = await supabase.from('jobs').select('*').eq('id', id).single();
+  if (error) return errorResponse(error.message, error.code === 'PGRST116' ? 404 : 500);
+  return jsonResponse(data);
+}
+
+async function createJob(body: any) {
+  const supabase = getSupabase();
+  const { title, company, country, city, job_type, sector, visa_sponsorship, salary_range, description, apply_url, posted_date, expires_at, is_active, is_featured, requirements } = body;
+  if (!title) return errorResponse('Title is required');
+  if (!company) return errorResponse('Company is required');
+
+  const { data, error } = await supabase
+    .from('jobs')
+    .insert({
+      title,
+      company,
+      country: country || null,
+      city: city || null,
+      job_type: job_type || null,
+      sector: sector || null,
+      visa_sponsorship: visa_sponsorship || null,
+      salary_range: salary_range || null,
+      description: description || null,
+      apply_url: apply_url || null,
+      posted_date: posted_date || new Date().toISOString(),
+      expires_at: expires_at || null,
+      is_active: is_active !== false,
+      is_featured: is_featured || false,
+      requirements: requirements || {},
+    })
+    .select()
+    .single();
+
+  if (error) return errorResponse(error.message, 500);
+  return jsonResponse(data, 201);
+}
+
+async function updateJob(id: string, body: any) {
+  const supabase = getSupabase();
+  const fields = ['title', 'company', 'country', 'city', 'job_type', 'sector', 'visa_sponsorship', 'salary_range', 'description', 'apply_url', 'posted_date', 'expires_at', 'is_active', 'is_featured', 'requirements'];
+  const updates: Record<string, any> = {};
+  for (const field of fields) {
+    if (body[field] !== undefined) updates[field] = body[field];
+  }
+  if (Object.keys(updates).length === 0) return errorResponse('No fields to update');
+
+  const { data, error } = await supabase.from('jobs').update(updates).eq('id', id).select().single();
+  if (error) return errorResponse(error.message, 500);
+  return jsonResponse(data);
+}
+
+async function deleteJob(id: string) {
+  const supabase = getSupabase();
+  const { error } = await supabase.from('jobs').update({ is_active: false }).eq('id', id);
+  if (error) return errorResponse(error.message, 500);
+  return jsonResponse({ success: true });
+}
+
+// --- IN-DEMAND ROLES ---
+
+async function getInDemandRoles(url: URL) {
+  const supabase = getSupabase();
+  const includeInactive = url.searchParams.get('include_inactive') === 'true';
+  let query = supabase.from('in_demand_roles').select('*').order('rank', { ascending: true });
+  if (!includeInactive) query = query.eq('is_active', true);
+  const { data, error } = await query;
+  if (error) return errorResponse(error.message, 500);
+  return jsonResponse({ roles: data });
+}
+
+async function getInDemandRoleById(id: string) {
+  const supabase = getSupabase();
+  const { data, error } = await supabase.from('in_demand_roles').select('*').eq('id', id).single();
+  if (error) return errorResponse(error.message, error.code === 'PGRST116' ? 404 : 500);
+  return jsonResponse(data);
+}
+
+async function createInDemandRole(body: any) {
+  const supabase = getSupabase();
+  const { rank, title, icon, accent_color, reason, is_active } = body;
+  if (rank === undefined || rank === null) return errorResponse('Rank is required');
+  if (!title) return errorResponse('Title is required');
+
+  const { data, error } = await supabase
+    .from('in_demand_roles')
+    .insert({
+      rank: parseInt(String(rank), 10),
+      title,
+      icon: icon || 'code',
+      accent_color: accent_color || '#3b82f6',
+      reason: reason || null,
+      is_active: is_active !== false,
+    })
+    .select()
+    .single();
+
+  if (error) return errorResponse(error.message, 500);
+  return jsonResponse(data, 201);
+}
+
+async function updateInDemandRole(id: string, body: any) {
+  const supabase = getSupabase();
+  const fields = ['rank', 'title', 'icon', 'accent_color', 'reason', 'is_active'];
+  const updates: Record<string, any> = {};
+  for (const field of fields) {
+    if (body[field] !== undefined) updates[field] = body[field];
+  }
+  if (updates.rank !== undefined) updates.rank = parseInt(String(updates.rank), 10);
+  if (Object.keys(updates).length === 0) return errorResponse('No fields to update');
+
+  const { data, error } = await supabase.from('in_demand_roles').update(updates).eq('id', id).select().single();
+  if (error) return errorResponse(error.message, 500);
+  return jsonResponse(data);
+}
+
+async function deleteInDemandRole(id: string) {
+  const supabase = getSupabase();
+  const { error } = await supabase.from('in_demand_roles').update({ is_active: false }).eq('id', id);
+  if (error) return errorResponse(error.message, 500);
+  return jsonResponse({ success: true });
+}
+
 // --- SETTINGS ---
 
 async function getSettings() {
@@ -545,6 +703,40 @@ Deno.serve(async (req) => {
     }
     if (path === 'settings' && (method === 'PATCH' || method === 'PUT')) {
       return updateSettings(body);
+    }
+
+    // --- JOBS ---
+    if (path === 'jobs' && method === 'GET') {
+      return getJobs(url);
+    }
+    if (path.match(/^jobs\/[a-f0-9-]+$/) && method === 'GET') {
+      return getJobById(path.split('/')[1]);
+    }
+    if (path === 'jobs' && method === 'POST') {
+      return createJob(body);
+    }
+    if (path.match(/^jobs\/[a-f0-9-]+$/) && (method === 'PUT' || method === 'PATCH')) {
+      return updateJob(path.split('/')[1], body);
+    }
+    if (path.match(/^jobs\/[a-f0-9-]+$/) && method === 'DELETE') {
+      return deleteJob(path.split('/')[1]);
+    }
+
+    // --- IN-DEMAND ROLES ---
+    if (path === 'in-demand-roles' && method === 'GET') {
+      return getInDemandRoles(url);
+    }
+    if (path.match(/^in-demand-roles\/[a-f0-9-]+$/) && method === 'GET') {
+      return getInDemandRoleById(path.split('/')[1]);
+    }
+    if (path === 'in-demand-roles' && method === 'POST') {
+      return createInDemandRole(body);
+    }
+    if (path.match(/^in-demand-roles\/[a-f0-9-]+$/) && (method === 'PUT' || method === 'PATCH')) {
+      return updateInDemandRole(path.split('/')[1], body);
+    }
+    if (path.match(/^in-demand-roles\/[a-f0-9-]+$/) && method === 'DELETE') {
+      return deleteInDemandRole(path.split('/')[1]);
     }
 
     return errorResponse(`Route not found: ${method} /${path}`, 404);

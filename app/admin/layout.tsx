@@ -10,6 +10,8 @@ import {
   BarChart3, 
   GraduationCap,
   BookOpen,
+  Briefcase,
+  ListOrdered,
   Settings,
   LogOut,
   Menu,
@@ -20,6 +22,8 @@ import {
 const navigation = [
   { name: 'Dashboard', href: '/admin', icon: LayoutDashboard },
   { name: 'Courses', href: '/admin/courses', icon: BookOpen },
+  { name: 'Jobs', href: '/admin/jobs', icon: Briefcase },
+  { name: 'In-Demand Roles', href: '/admin/in-demand-roles', icon: ListOrdered },
   { name: 'Users', href: '/admin/users', icon: Users },
   { name: 'Sales', href: '/admin/sales', icon: TrendingUp },
   { name: 'Analytics', href: '/admin/analytics', icon: BarChart3 },
