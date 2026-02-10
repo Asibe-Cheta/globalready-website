@@ -24,6 +24,10 @@ export default function NewCoursePage() {
     subtitle: '',
     description: '',
     category: '',
+    path_category: '',
+    icon: 'code',
+    tint_color: '#0d6cf2',
+    display_order: '0',
     duration: '',
     duration_hours: '',
     total_lessons: '',
@@ -60,6 +64,10 @@ export default function NewCoursePage() {
         subtitle: form.subtitle.trim() || null,
         description: form.description.trim() || null,
         category: form.category.trim() || null,
+        path_category: form.path_category.trim() || null,
+        icon: form.icon.trim() || null,
+        tint_color: form.tint_color.trim() || '#0d6cf2',
+        display_order: parseInt(form.display_order, 10) || 0,
         duration: form.duration.trim() || null,
         duration_hours: parseInt(form.duration_hours, 10) || 0,
         total_lessons: parseInt(form.total_lessons, 10) || 0,
@@ -121,15 +129,41 @@ export default function NewCoursePage() {
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-slate-300 mb-1">Category</label>
+              <label className="block text-sm font-medium text-slate-300 mb-1">Category (legacy)</label>
               <input value={form.category} onChange={(e) => update('category', e.target.value)} className="w-full px-4 py-2 bg-[#223249] border border-slate-700/50 rounded-lg text-white" placeholder="e.g. IELTS, Tech" />
             </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-300 mb-1">Path category</label>
+              <select value={form.path_category} onChange={(e) => update('path_category', e.target.value)} className="w-full px-4 py-2 bg-[#223249] border border-slate-700/50 rounded-lg text-white">
+                <option value="">—</option>
+                <option value="side_hustle">Side Hustle</option>
+                <option value="tech_career">Tech Career</option>
+                <option value="language">Language</option>
+              </select>
+            </div>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-slate-300 mb-1">Icon (MaterialIcons)</label>
+              <input value={form.icon} onChange={(e) => update('icon', e.target.value)} className="w-full px-4 py-2 bg-[#223249] border border-slate-700/50 rounded-lg text-white" placeholder="code, cloud, security" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-300 mb-1">Tint color</label>
+              <div className="flex gap-2">
+                <input type="color" value={form.tint_color} onChange={(e) => update('tint_color', e.target.value)} className="h-10 w-14 rounded border border-slate-700/50 cursor-pointer" />
+                <input value={form.tint_color} onChange={(e) => update('tint_color', e.target.value)} className="flex-1 px-4 py-2 bg-[#223249] border border-slate-700/50 rounded-lg text-white font-mono" />
+              </div>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-300 mb-1">Display order</label>
+              <input type="number" min={0} value={form.display_order} onChange={(e) => update('display_order', e.target.value)} className="w-full px-4 py-2 bg-[#223249] border border-slate-700/50 rounded-lg text-white" />
+            </div>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
               <label className="block text-sm font-medium text-slate-300 mb-1">Duration (display)</label>
               <input value={form.duration} onChange={(e) => update('duration', e.target.value)} className="w-full px-4 py-2 bg-[#223249] border border-slate-700/50 rounded-lg text-white" placeholder="e.g. 8 weeks" />
             </div>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-slate-300 mb-1">Duration (hours)</label>
               <input type="number" min={0} value={form.duration_hours} onChange={(e) => update('duration_hours', e.target.value)} className="w-full px-4 py-2 bg-[#223249] border border-slate-700/50 rounded-lg text-white" />

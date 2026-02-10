@@ -12,6 +12,7 @@ import {
   BookOpen,
   Briefcase,
   ListOrdered,
+  Video,
   Settings,
   LogOut,
   Menu,
@@ -22,6 +23,7 @@ import {
 const navigation = [
   { name: 'Dashboard', href: '/admin', icon: LayoutDashboard },
   { name: 'Courses', href: '/admin/courses', icon: BookOpen },
+  { name: 'Virtual Sessions', href: '/admin/virtual-sessions', icon: Video },
   { name: 'Jobs', href: '/admin/jobs', icon: Briefcase },
   { name: 'In-Demand Roles', href: '/admin/in-demand-roles', icon: ListOrdered },
   { name: 'Users', href: '/admin/users', icon: Users },

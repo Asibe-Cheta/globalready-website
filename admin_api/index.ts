@@ -98,8 +98,8 @@ async function createCourse(body: any) {
   const supabase = getSupabase();
 
   const {
-    title, subtitle, description, category, duration, duration_hours,
-    total_lessons, image_url, thumbnail_url, instructor, instructor_avatar,
+    title, subtitle, description, category, path_category, icon, tint_color, display_order,
+    duration, duration_hours, total_lessons, image_url, thumbnail_url, instructor, instructor_avatar,
     price, currency, level, syllabus, prerequisites, learning_outcomes,
     tags, featured, is_active,
   } = body;
@@ -113,6 +113,10 @@ async function createCourse(body: any) {
       subtitle: subtitle || null,
       description: description || null,
       category: category || null,
+      path_category: path_category || null,
+      icon: icon || null,
+      tint_color: tint_color || '#0d6cf2',
+      display_order: display_order != null ? parseInt(String(display_order), 10) : 0,
       duration: duration || null,
       duration_hours: duration_hours || 0,
       total_lessons: total_lessons || 0,
@@ -144,15 +148,15 @@ async function updateCourse(id: string, body: any) {
   // Only include fields that are actually provided
   const updates: Record<string, any> = {};
   const fields = [
-    'title', 'subtitle', 'description', 'category', 'duration', 'duration_hours',
-    'total_lessons', 'image_url', 'thumbnail_url', 'instructor', 'instructor_avatar',
+    'title', 'subtitle', 'description', 'category', 'path_category', 'icon', 'tint_color', 'display_order',
+    'duration', 'duration_hours', 'total_lessons', 'image_url', 'thumbnail_url', 'instructor', 'instructor_avatar',
     'price', 'currency', 'level', 'syllabus', 'prerequisites', 'learning_outcomes',
     'tags', 'featured', 'is_active',
   ];
 
   for (const field of fields) {
     if (body[field] !== undefined) {
-      updates[field] = body[field];
+      updates[field] = field === 'display_order' ? parseInt(String(body[field]), 10) : body[field];
     }
   }
 
@@ -186,6 +190,80 @@ async function deleteCourse(id: string) {
   if (error) return errorResponse(error.message, 500);
 
   return jsonResponse({ success: true, course: data });
+}
+
+// --- VIRTUAL SESSIONS ---
+
+async function getVirtualSessions(url: URL) {
+  const supabase = getSupabase();
+  const courseId = url.searchParams.get('course_id');
+  const includeInactive = url.searchParams.get('include_inactive') === 'true';
+  let query = supabase
+    .from('virtual_sessions')
+    .select('*, courses(id, title, path_category)', { count: 'exact' })
+    .order('session_date', { ascending: true });
+  if (courseId) query = query.eq('course_id', courseId);
+  if (!includeInactive) query = query.eq('is_active', true);
+  const { data, error, count } = await query;
+  if (error) return errorResponse(error.message, 500);
+  return jsonResponse({ sessions: data, total: count ?? data?.length ?? 0 });
+}
+
+async function getVirtualSessionById(id: string) {
+  const supabase = getSupabase();
+  const { data, error } = await supabase
+    .from('virtual_sessions')
+    .select('*, courses(id, title, path_category)')
+    .eq('id', id)
+    .single();
+  if (error) return errorResponse(error.message, error.code === 'PGRST116' ? 404 : 500);
+  return jsonResponse(data);
+}
+
+async function createVirtualSession(body: any) {
+  const supabase = getSupabase();
+  const { course_id, session_date, timezone, location, meeting_link, duration_minutes, is_active } = body;
+  if (!course_id) return errorResponse('course_id is required');
+  if (!session_date) return errorResponse('session_date is required');
+  const { data, error } = await supabase
+    .from('virtual_sessions')
+    .insert({
+      course_id,
+      session_date: new Date(session_date).toISOString(),
+      timezone: timezone || 'GMT',
+      location: location || null,
+      meeting_link: meeting_link || null,
+      duration_minutes: duration_minutes != null ? parseInt(String(duration_minutes), 10) : null,
+      is_active: is_active !== false,
+    })
+    .select()
+    .single();
+  if (error) return errorResponse(error.message, 500);
+  return jsonResponse(data, 201);
+}
+
+async function updateVirtualSession(id: string, body: any) {
+  const supabase = getSupabase();
+  const fields = ['course_id', 'session_date', 'timezone', 'location', 'meeting_link', 'duration_minutes', 'is_active'];
+  const updates: Record<string, any> = {};
+  for (const field of fields) {
+    if (body[field] !== undefined) {
+      if (field === 'session_date') updates[field] = new Date(body[field]).toISOString();
+      else if (field === 'duration_minutes') updates[field] = body[field] != null ? parseInt(String(body[field]), 10) : null;
+      else updates[field] = body[field];
+    }
+  }
+  if (Object.keys(updates).length === 0) return errorResponse('No fields to update');
+  const { data, error } = await supabase.from('virtual_sessions').update(updates).eq('id', id).select().single();
+  if (error) return errorResponse(error.message, 500);
+  return jsonResponse(data);
+}
+
+async function deleteVirtualSession(id: string) {
+  const supabase = getSupabase();
+  const { error } = await supabase.from('virtual_sessions').update({ is_active: false }).eq('id', id);
+  if (error) return errorResponse(error.message, 500);
+  return jsonResponse({ success: true });
 }
 
 // --- DASHBOARD ---
@@ -653,6 +731,23 @@ Deno.serve(async (req) => {
     if (path.match(/^courses\/[a-f0-9-]+$/) && method === 'DELETE') {
       const id = path.split('/')[1];
       return deleteCourse(id);
+    }
+
+    // --- VIRTUAL SESSIONS ---
+    if (path === 'virtual-sessions' && method === 'GET') {
+      return getVirtualSessions(url);
+    }
+    if (path.match(/^virtual-sessions\/[a-f0-9-]+$/) && method === 'GET') {
+      return getVirtualSessionById(path.split('/')[1]);
+    }
+    if (path === 'virtual-sessions' && method === 'POST') {
+      return createVirtualSession(body);
+    }
+    if (path.match(/^virtual-sessions\/[a-f0-9-]+$/) && (method === 'PUT' || method === 'PATCH')) {
+      return updateVirtualSession(path.split('/')[1], body);
+    }
+    if (path.match(/^virtual-sessions\/[a-f0-9-]+$/) && method === 'DELETE') {
+      return deleteVirtualSession(path.split('/')[1]);
     }
 
     // --- DASHBOARD ---
