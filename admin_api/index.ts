@@ -704,7 +704,8 @@ Deno.serve(async (req) => {
   }
 
   const url = new URL(req.url);
-  const path = url.pathname.replace(/^\/admin-api\/?/, '').replace(/\/$/, '');
+  let path = url.pathname.replace(/^\/admin-api\/?/, '').replace(/\/$/, '');
+  if (path.startsWith('/')) path = path.slice(1);
   const method = req.method;
 
   try {
