@@ -22,6 +22,8 @@ export default function Navigation() {
             <Link href="#features" className="text-sm font-medium text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition">Features</Link>
             <Link href="#how-it-works" className="text-sm font-medium text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition">How It Works</Link>
             <Link href="#pricing" className="text-sm font-medium text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition">Pricing</Link>
+            <Link href="/support" className="text-sm font-medium text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition">Support</Link>
+            <Link href="/privacy" className="text-sm font-medium text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition">Privacy</Link>
           </div>
 
           <div className="hidden md:flex items-center gap-4">
@@ -44,6 +46,8 @@ export default function Navigation() {
             <Link href="#features" className="block text-sm font-medium text-slate-700 dark:text-slate-300">Features</Link>
             <Link href="#how-it-works" className="block text-sm font-medium text-slate-700 dark:text-slate-300">How It Works</Link>
             <Link href="#pricing" className="block text-sm font-medium text-slate-700 dark:text-slate-300">Pricing</Link>
+            <Link href="/support" className="block text-sm font-medium text-slate-700 dark:text-slate-300">Support</Link>
+            <Link href="/privacy" className="block text-sm font-medium text-slate-700 dark:text-slate-300">Privacy</Link>
             <button className="w-full bg-[#0d6cf2] text-white font-semibold px-6 py-3 rounded-full">Get Started</button>
           </div>
         )}

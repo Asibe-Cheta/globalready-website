@@ -12,11 +12,12 @@ const footerLinks = {
   ],
   Company: [
     { label: 'About Us', href: '#' },
-    { label: 'Contact', href: '#' },
+    { label: 'Contact', href: '/support' },
     { label: 'Blog', href: '#' },
   ],
   Legal: [
-    { label: 'Privacy Policy', href: '#' },
+    { label: 'Privacy Policy', href: '/privacy' },
+    { label: 'Support', href: '/support' },
     { label: 'Terms of Service', href: '#' },
     { label: 'Disclaimer', href: '#disclaimer' },
   ],
