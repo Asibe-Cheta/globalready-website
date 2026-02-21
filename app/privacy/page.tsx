@@ -71,7 +71,7 @@ export default function PrivacyPage() {
             <h2 className="text-xl font-semibold text-slate-900 dark:text-white mt-8">Contact Us</h2>
             <p>
               For privacy-related questions or requests, contact us at{' '}
-              <a href="mailto:support@globalready.tech" className="text-primary hover:underline">support@globalready.tech</a> or visit our{' '}
+              <a href="mailto:contact@globalready.tech" className="text-primary hover:underline">contact@globalready.tech</a> or visit our{' '}
               <Link href="/support" className="text-primary hover:underline">Support</Link> page.
             </p>
           </div>

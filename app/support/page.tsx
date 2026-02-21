@@ -34,8 +34,8 @@ export default function SupportPage() {
               <p className="mb-2">
                 For questions, technical issues, or feedback, email us at:
               </p>
-              <a href="mailto:support@globalready.tech" className="text-primary font-medium hover:underline">
-                support@globalready.tech
+              <a href="mailto:contact@globalready.tech" className="text-primary font-medium hover:underline">
+                contact@globalready.tech
               </a>
               <p className="mt-3 text-sm">
                 We aim to respond within 1–2 business days.
@@ -51,7 +51,7 @@ export default function SupportPage() {
                 </li>
                 <li>
                   <strong className="text-slate-800 dark:text-slate-200">I’m having trouble with payments.</strong>
-                  <p className="mt-1">Payments are processed by Stripe. If a charge failed or you need a refund, contact us at support@globalready.tech with your email and order details.</p>
+                  <p className="mt-1">Payments are processed by Stripe. If a charge failed or you need a refund, contact us at contact@globalready.tech with your email and order details.</p>
                 </li>
                 <li>
                   <strong className="text-slate-800 dark:text-slate-200">How do I update my profile or CV?</strong>
@@ -59,7 +59,7 @@ export default function SupportPage() {
                 </li>
                 <li>
                   <strong className="text-slate-800 dark:text-slate-200">I want to delete my account.</strong>
-                  <p className="mt-1">Email us at support@globalready.tech with the subject &quot;Account deletion&quot; and we’ll process your request in line with our privacy policy.</p>
+                  <p className="mt-1">Email us at contact@globalready.tech with the subject &quot;Account deletion&quot; and we’ll process your request in line with our privacy policy.</p>
                 </li>
               </ul>
             </div>
