@@ -5,13 +5,16 @@ import { useState, Suspense } from 'react'
 import Link from 'next/link'
 import Navigation from '@/components/Navigation'
 import Footer from '@/components/Footer'
-import { Check, Loader2, Smartphone } from 'lucide-react'
+import { Check, Loader2 } from 'lucide-react'
 
 function UpgradeContent() {
   const searchParams = useSearchParams()
   const uid = searchParams.get('uid')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [email, setEmail] = useState('')
+  const [emailLoading, setEmailLoading] = useState(false)
+  const [emailError, setEmailError] = useState('')
 
   async function handleGetPro() {
     if (!uid) return
@@ -25,7 +28,7 @@ function UpgradeContent() {
       })
       const data = await res.json().catch(() => ({}))
       if (!res.ok) {
-        setError(data.error || 'Something went wrong.')
+        setError(data.error || data.message || 'Something went wrong.')
         setLoading(false)
         return
       }
@@ -38,6 +41,32 @@ function UpgradeContent() {
       setError('Network error. Please try again.')
     }
     setLoading(false)
+  }
+
+  async function handleEmailCheckout() {
+    setEmailLoading(true)
+    setEmailError('')
+    try {
+      const res = await fetch('/api/create-checkout-session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) {
+        setEmailError(data.message || data.error || 'Something went wrong.')
+        setEmailLoading(false)
+        return
+      }
+      if (data.url) {
+        window.location.href = data.url
+        return
+      }
+      setEmailError('Could not start checkout.')
+    } catch {
+      setEmailError('Network error. Please try again.')
+    }
+    setEmailLoading(false)
   }
 
   return (
@@ -89,19 +118,41 @@ function UpgradeContent() {
               </div>
             </>
           ) : (
-            <div className="rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-white/5 p-8 flex flex-col items-center text-center">
-              <div className="h-14 w-14 rounded-xl bg-primary/10 flex items-center justify-center mb-4">
-                <Smartphone className="w-7 h-7 text-primary" />
-              </div>
+            <div className="rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#1a2432] p-8">
               <h2 className="text-xl font-semibold text-slate-900 dark:text-white mb-2">
-                Subscribe from the app
+                Enter your GlobalReady account email to link your subscription
               </h2>
-              <p className="text-slate-600 dark:text-slate-400 mb-6 max-w-md">
-                To subscribe, open the <strong>GlobalReady</strong> app and tap <strong>Subscribe</strong> or <strong>Get Pro</strong>. You’ll be sent back here with your account linked so your Pro status syncs to the app.
+              <p className="text-slate-600 dark:text-slate-400 text-sm mb-6">
+                Use the same email you use in the GlobalReady app. Your Pro status will sync to the app after payment.
               </p>
-              <Link href="/#pricing" className="text-primary font-medium hover:underline">
-                ← Back to pricing
-              </Link>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="you@example.com"
+                className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/50 text-slate-900 dark:text-white placeholder:text-slate-400 mb-4 focus:outline-none focus:ring-2 focus:ring-primary"
+                disabled={emailLoading}
+              />
+              {emailError && (
+                <p className="text-red-500 dark:text-red-400 text-sm mb-4">{emailError}</p>
+              )}
+              <button
+                onClick={handleEmailCheckout}
+                disabled={emailLoading || !email.trim()}
+                className="btn-primary w-full flex items-center justify-center gap-2"
+              >
+                {emailLoading ? (
+                  <>
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                    Redirecting to checkout…
+                  </>
+                ) : (
+                  'Get Pro →'
+                )}
+              </button>
+              <p className="text-slate-500 dark:text-slate-400 text-xs mt-4 text-center">
+                No account yet? <Link href="/#pricing" className="text-primary hover:underline">Sign up in the app</Link> first, then return here.
+              </p>
             </div>
           )}
         </div>
