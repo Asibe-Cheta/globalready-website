@@ -52,7 +52,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const priceId = process.env.STRIPE_PRICE_ID
+    const priceId = process.env.STRIPE_PRICE_ID || process.env.STRIPE_PRO_PRICE_ID
     if (!process.env.STRIPE_SECRET_KEY || !priceId) {
       console.error('Missing STRIPE_SECRET_KEY or STRIPE_PRICE_ID')
       return NextResponse.json(
