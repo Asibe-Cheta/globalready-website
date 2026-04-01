@@ -72,13 +72,13 @@ export default function NewVirtualSessionPage() {
     setError('')
     if (!form.event_type.trim()) { setError('Event type is required'); return }
     if (!form.session_date) { setError('Session date is required'); return }
-    const sessionDate = new Date(`${form.session_date}T${form.session_time}:00`)
+    const sessionDateIso = `${form.session_date}T${form.session_time}:00.000Z`
     setSaving(true)
     try {
       const courseId = await resolveCourseIdByTitle(form.event_type)
       const body = {
         course_id: courseId,
-        session_date: sessionDate.toISOString(),
+        session_date: sessionDateIso,
         timezone: form.timezone.trim() || 'GMT',
         location: form.location.trim() || null,
         meeting_link: form.meeting_link.trim() || null,

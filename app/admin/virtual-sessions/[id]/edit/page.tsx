@@ -44,7 +44,7 @@ export default function EditVirtualSessionPage() {
         if (cancelled) return
         const d = new Date(s.session_date)
         const dateStr = d.toISOString().slice(0, 10)
-        const timeStr = d.toTimeString().slice(0, 5)
+        const timeStr = d.toISOString().slice(11, 16)
         setForm({
           course_id: s.course_id ?? '',
           event_type: s.courses?.title ?? '',
@@ -121,13 +121,13 @@ export default function EditVirtualSessionPage() {
     setError('')
     if (!form.event_type.trim()) { setError('Event type is required'); return }
     if (!form.session_date) { setError('Session date is required'); return }
-    const sessionDate = new Date(`${form.session_date}T${form.session_time}:00`)
+    const sessionDateIso = `${form.session_date}T${form.session_time}:00.000Z`
     setSaving(true)
     try {
       const courseId = await resolveCourseIdByTitle(form.event_type)
       const body = {
         course_id: courseId,
-        session_date: sessionDate.toISOString(),
+        session_date: sessionDateIso,
         timezone: form.timezone.trim() || 'GMT',
         location: form.location.trim() || null,
         meeting_link: form.meeting_link.trim() || null,
