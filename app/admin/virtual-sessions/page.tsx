@@ -54,7 +54,7 @@ export default function AdminVirtualSessionsPage() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold text-white mb-2">Virtual Sessions</h1>
-          <p className="text-slate-400">Manage virtual room sessions. Each session is attached to a course. Mobile app reads these dynamically.</p>
+          <p className="text-slate-400">Manage virtual room sessions. Event types can be typed freely and reused in mobile.</p>
         </div>
         <Link
           href="/admin/virtual-sessions/new"
@@ -100,7 +100,7 @@ export default function AdminVirtualSessionsPage() {
               <thead>
                 <tr className="border-b border-slate-700/50">
                   <th className="text-left py-3 px-4 text-slate-400 font-medium">Date & time</th>
-                  <th className="text-left py-3 px-4 text-slate-400 font-medium">Course</th>
+                  <th className="text-left py-3 px-4 text-slate-400 font-medium">Event Type</th>
                   <th className="text-left py-3 px-4 text-slate-400 font-medium">Location</th>
                   <th className="text-left py-3 px-4 text-slate-400 font-medium">Duration</th>
                   <th className="text-left py-3 px-4 text-slate-400 font-medium">Status</th>

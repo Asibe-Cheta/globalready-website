@@ -18,6 +18,7 @@ export default function EditVirtualSessionPage() {
   const [error, setError] = useState('')
   const [form, setForm] = useState({
     course_id: '',
+    event_type: '',
     session_date: '',
     session_time: '18:00',
     timezone: 'GMT',
@@ -46,6 +47,7 @@ export default function EditVirtualSessionPage() {
         const timeStr = d.toTimeString().slice(0, 5)
         setForm({
           course_id: s.course_id ?? '',
+          event_type: s.courses?.title ?? '',
           session_date: dateStr,
           session_time: timeStr,
           timezone: s.timezone ?? 'GMT',
@@ -84,16 +86,47 @@ export default function EditVirtualSessionPage() {
     setForm((f) => ({ ...f, [key]: value }))
   }
 
+  useEffect(() => {
+    if (!form.event_type && form.course_id && courses.length > 0) {
+      const match = courses.find((c) => c.id === form.course_id)
+      if (match) setForm((f) => ({ ...f, event_type: match.title }))
+    }
+  }, [courses, form.course_id, form.event_type])
+
+  async function resolveCourseIdByTitle(rawTitle: string) {
+    const title = rawTitle.trim()
+    const existing = courses.find((c) => c.title.trim().toLowerCase() === title.toLowerCase())
+    if (existing) return existing.id
+
+    const createRes = await fetch('/api/admin/courses', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({
+        title,
+        category: 'Virtual Sessions',
+        path_category: 'virtual_sessions',
+        is_active: true,
+      }),
+    })
+    const createData = await createRes.json().catch(() => ({}))
+    if (!createRes.ok) throw new Error(createData.error || 'Failed to create event type')
+    const created = createData as Course
+    setCourses((prev) => [...prev, { id: created.id, title: created.title }])
+    return created.id
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setError('')
-    if (!form.course_id) { setError('Course is required'); return }
+    if (!form.event_type.trim()) { setError('Event type is required'); return }
     if (!form.session_date) { setError('Session date is required'); return }
     const sessionDate = new Date(`${form.session_date}T${form.session_time}:00`)
     setSaving(true)
     try {
+      const courseId = await resolveCourseIdByTitle(form.event_type)
       const body = {
-        course_id: form.course_id,
+        course_id: courseId,
         session_date: sessionDate.toISOString(),
         timezone: form.timezone.trim() || 'GMT',
         location: form.location.trim() || null,
@@ -138,13 +171,24 @@ export default function EditVirtualSessionPage() {
       <form onSubmit={handleSubmit} className="space-y-6">
         <div className="bg-[#1a2432] border border-slate-700/50 rounded-2xl p-6 space-y-4">
           <div>
-            <label className="block text-sm font-medium text-slate-300 mb-1">Course *</label>
-            <select value={form.course_id} onChange={(e) => update('course_id', e.target.value)} className="w-full px-4 py-2 bg-[#223249] border border-slate-700/50 rounded-lg text-white" required>
-              <option value="">Select a course</option>
+            <label className="block text-sm font-medium text-slate-300 mb-1">Event type *</label>
+            <input
+              value={form.event_type}
+              onChange={(e) => update('event_type', e.target.value)}
+              className="w-full px-4 py-2 bg-[#223249] border border-slate-700/50 rounded-lg text-white"
+              placeholder="e.g. High Income Skills"
+              list="virtual-session-event-types"
+              required
+            />
+            <datalist id="virtual-session-event-types">
               {courses.map((c) => (
-                <option key={c.id} value={c.id}>{c.title}</option>
+                <option key={c.id} value={c.title} />
               ))}
-            </select>
+            </datalist>
+            <p className="text-slate-500 text-sm mt-1">
+              Type a new event type or pick an existing one.
+              {loadingCourses ? ' Loading existing event types…' : ''}
+            </p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
