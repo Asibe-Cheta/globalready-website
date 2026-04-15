@@ -29,7 +29,7 @@ export async function POST(request: NextRequest) {
       const supabaseAdmin = getSupabaseAdmin()
       const { data, error } = await supabaseAdmin.auth.admin.listUsers({ perPage: 1000 })
       if (error) {
-        console.error('Supabase listUsers error:', error)
+        console.error('Supabase listUsers error:', error.message, error)
         return NextResponse.json(
           { message: 'Could not look up account.' },
           { status: 500 }
@@ -64,6 +64,7 @@ export async function POST(request: NextRequest) {
     const stripe = getStripe()
     const session = await stripe.checkout.sessions.create({
       mode: 'subscription',
+      allow_promotion_codes: true,
       line_items: [
         {
           price: priceId,
