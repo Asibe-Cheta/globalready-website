@@ -27,6 +27,7 @@ export default function UsersPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [debouncedSearch, setDebouncedSearch] = useState('')
+  const [exporting, setExporting] = useState(false)
 
   useEffect(() => {
     const t = setTimeout(() => setDebouncedSearch(searchQuery), 300)
@@ -62,6 +63,62 @@ export default function UsersPage() {
   const start = (pagination.page - 1) * pagination.limit + 1
   const end = Math.min(pagination.page * pagination.limit, pagination.total)
 
+  function escapeCsvValue(value: string) {
+    return `"${value.replace(/"/g, '""')}"`
+  }
+
+  async function handleExportCsv() {
+    setExporting(true)
+    setError(null)
+    try {
+      const allUsers: User[] = []
+      let page = 1
+      let hasMore = true
+
+      while (hasMore) {
+        const params = new URLSearchParams({ page: String(page), limit: '200' })
+        if (debouncedSearch.trim()) params.set('search', debouncedSearch.trim())
+        const res = await fetch(`/api/admin/users?${params}`, { credentials: 'include' })
+        if (!res.ok) {
+          const data = await res.json().catch(() => ({}))
+          throw new Error(data.error || 'Failed to export users')
+        }
+        const data = await res.json()
+        const batch: User[] = data.users ?? []
+        allUsers.push(...batch)
+
+        const total = data.pagination?.total ?? allUsers.length
+        hasMore = allUsers.length < total && batch.length > 0
+        page += 1
+      }
+
+      const rows = [
+        ['full_name', 'email'],
+        ...allUsers
+          .filter((u) => Boolean(u.email))
+          .map((u) => [u.full_name || '', u.email || '']),
+      ]
+      const csv = rows
+        .map((row) => row.map((v) => escapeCsvValue(String(v))).join(','))
+        .join('\n')
+
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      const date = new Date().toISOString().slice(0, 10)
+      a.href = url
+      a.download = `users-email-list-${date}.csv`
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      URL.revokeObjectURL(url)
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Failed to export users')
+    } finally {
+      setExporting(false)
+    }
+  }
+
   return (
     <div className="space-y-6">
       <div>
@@ -89,9 +146,14 @@ export default function UsersPage() {
             <Filter className="w-5 h-5 text-slate-400" />
             <span className="text-slate-400 text-sm">All users</span>
           </div>
-          <button className="flex items-center gap-2 px-4 py-2 bg-[#1a2432] text-slate-300 rounded-lg font-medium hover:bg-[#223249] transition-colors cursor-not-allowed" title="Export coming soon">
+          <button
+            onClick={handleExportCsv}
+            disabled={exporting || loading}
+            className="flex items-center gap-2 px-4 py-2 bg-[#1a2432] text-slate-300 rounded-lg font-medium hover:bg-[#223249] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            title="Export filtered users as CSV"
+          >
             <Download className="w-4 h-4" />
-            Export
+            {exporting ? 'Exporting…' : 'Export CSV'}
           </button>
         </div>
       </div>
