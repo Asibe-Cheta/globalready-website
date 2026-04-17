@@ -452,7 +452,7 @@ async function getJobById(id: string) {
 
 async function createJob(body: any) {
   const supabase = getSupabase();
-  const { title, company, country, city, job_type, sector, visa_sponsorship, salary_range, description, apply_url, posted_date, expires_at, is_active, is_featured, requirements } = body;
+  const { title, company, country, city, job_type, sector, visa_sponsorship, salary_range, description, apply_url, posted_date, expires_at, is_active, is_featured, requirements, source } = body;
   if (!title) return errorResponse('Title is required');
   if (!company) return errorResponse('Company is required');
   const { data, error } = await supabase.from('jobs').insert({
@@ -460,6 +460,7 @@ async function createJob(body: any) {
     visa_sponsorship: visa_sponsorship || null, salary_range: salary_range || null, description: description || null,
     apply_url: apply_url || null, posted_date: posted_date || new Date().toISOString(), expires_at: expires_at || null,
     is_active: is_active !== false, is_featured: is_featured || false, requirements: requirements || {},
+    source: source || 'admin',
   }).select().single();
   if (error) return errorResponse(error.message, 500);
   return jsonResponse(data, 201);
@@ -467,7 +468,7 @@ async function createJob(body: any) {
 
 async function updateJob(id: string, body: any) {
   const supabase = getSupabase();
-  const fields = ['title', 'company', 'country', 'city', 'job_type', 'sector', 'visa_sponsorship', 'salary_range', 'description', 'apply_url', 'posted_date', 'expires_at', 'is_active', 'is_featured', 'requirements'];
+  const fields = ['title', 'company', 'country', 'city', 'job_type', 'sector', 'visa_sponsorship', 'salary_range', 'description', 'apply_url', 'posted_date', 'expires_at', 'is_active', 'is_featured', 'requirements', 'source'];
   const updates: Record<string, any> = {};
   for (const field of fields) {
     if (body[field] !== undefined) updates[field] = body[field];

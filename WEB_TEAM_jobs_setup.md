@@ -102,6 +102,7 @@ Content-Type: application/json
   "expires_at": null,
   "is_active": true,                         // defaults to true
   "is_featured": false,                      // defaults to false
+  "source": "admin",                         // defaults to "admin"; ingestion should set provider name
   "requirements": {                          // JSONB — optional
     "responsibilities": [
       "Design and implement REST APIs",
@@ -266,3 +267,4 @@ After running the SQL and deploying:
 - CV upload functionality on the Confirm Job & CV screen is not yet wired — that's the next phase
 - Featured jobs (`is_featured = true`) always appear first in the feed
 - Jobs are sorted by: featured first, then by posted date (newest first)
+- `source` on jobs defaults to `admin`; external ingestion should write provider values like `adzuna`, `remoteok`, `remotive`, `jobicy`, `wwr`.

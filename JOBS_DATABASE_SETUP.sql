@@ -8,6 +8,7 @@ CREATE TABLE IF NOT EXISTS public.jobs (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   title TEXT NOT NULL,
   company TEXT NOT NULL,
+  source VARCHAR(50) NOT NULL DEFAULT 'admin',
   country TEXT,
   city TEXT,
   job_type TEXT,
@@ -26,6 +27,10 @@ CREATE TABLE IF NOT EXISTS public.jobs (
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
+
+-- Backward-compatible: add source to existing jobs table
+ALTER TABLE public.jobs
+ADD COLUMN IF NOT EXISTS source VARCHAR(50) NOT NULL DEFAULT 'admin';
 
 ALTER TABLE public.jobs ENABLE ROW LEVEL SECURITY;
 
@@ -94,47 +99,72 @@ CREATE POLICY "Public can view active in_demand_roles"
 -- ============================================================
 -- 4. Seed Top 10 In-Demand Tech Roles
 -- ============================================================
-INSERT INTO public.in_demand_roles (rank, title, icon, accent_color, reason, is_active) VALUES
-  (1,  'Software Developer',      'code',             '#3b82f6', 'Critical for building and maintaining applications across industries.', true),
-  (2,  'Data Scientist',          'analytics',        '#8b5cf6', 'Demand for data-driven decision making continues to grow.', true),
-  (3,  'Cybersecurity Analyst',    'shield',           '#ef4444', 'Organizations prioritize protecting systems and data.', true),
-  (4,  'Cloud Engineer',          'cloud',            '#0ea5e9', 'Cloud adoption drives need for infrastructure and DevOps skills.', true),
-  (5,  'DevOps Specialist',       'settings',         '#10b981', 'Bridges development and operations for faster delivery.', true),
-  (6,  'AI/ML Engineer',          'psychology',       '#ec4899', 'AI and machine learning are transforming every sector.', true),
-  (7,  'UI/UX Designer',          'design-services',  '#f59e0b', 'User experience is a key differentiator for products.', true),
-  (8,  'Full Stack Engineer',     'layers',           '#06b6d4', 'Versatile developers who can work across the stack.', true),
-  (9,  'Mobile App Developer',    'smartphone',       '#6366f1', 'Mobile-first experiences remain in high demand.', true),
-  (10, 'IT Systems Architect',     'account-tree',      '#84cc16', 'Designs and oversees complex technology systems.', true)
-ON CONFLICT (rank) DO UPDATE SET
-  title = EXCLUDED.title,
-  icon = EXCLUDED.icon,
-  accent_color = EXCLUDED.accent_color,
-  reason = EXCLUDED.reason,
-  is_active = EXCLUDED.is_active,
-  updated_at = NOW();
+WITH seed(rank, title, icon, accent_color, reason, is_active) AS (
+  VALUES
+    (1,  'Software Developer',      'code',            '#3b82f6', 'Critical for building and maintaining applications across industries.', true),
+    (2,  'Data Scientist',          'analytics',       '#8b5cf6', 'Demand for data-driven decision making continues to grow.', true),
+    (3,  'Cybersecurity Analyst',   'shield',          '#ef4444', 'Organizations prioritize protecting systems and data.', true),
+    (4,  'Cloud Engineer',          'cloud',           '#0ea5e9', 'Cloud adoption drives need for infrastructure and DevOps skills.', true),
+    (5,  'DevOps Specialist',       'settings',        '#10b981', 'Bridges development and operations for faster delivery.', true),
+    (6,  'AI/ML Engineer',          'psychology',      '#ec4899', 'AI and machine learning are transforming every sector.', true),
+    (7,  'UI/UX Designer',          'design-services', '#f59e0b', 'User experience is a key differentiator for products.', true),
+    (8,  'Full Stack Engineer',     'layers',          '#06b6d4', 'Versatile developers who can work across the stack.', true),
+    (9,  'Mobile App Developer',    'smartphone',      '#6366f1', 'Mobile-first experiences remain in high demand.', true),
+    (10, 'IT Systems Architect',    'account-tree',    '#84cc16', 'Designs and oversees complex technology systems.', true)
+)
+UPDATE public.in_demand_roles r
+SET
+  title = s.title,
+  icon = s.icon,
+  accent_color = s.accent_color,
+  reason = s.reason,
+  is_active = s.is_active,
+  updated_at = NOW()
+FROM seed s
+WHERE r.rank = s.rank;
+
+WITH seed(rank, title, icon, accent_color, reason, is_active) AS (
+  VALUES
+    (1,  'Software Developer',      'code',            '#3b82f6', 'Critical for building and maintaining applications across industries.', true),
+    (2,  'Data Scientist',          'analytics',       '#8b5cf6', 'Demand for data-driven decision making continues to grow.', true),
+    (3,  'Cybersecurity Analyst',   'shield',          '#ef4444', 'Organizations prioritize protecting systems and data.', true),
+    (4,  'Cloud Engineer',          'cloud',           '#0ea5e9', 'Cloud adoption drives need for infrastructure and DevOps skills.', true),
+    (5,  'DevOps Specialist',       'settings',        '#10b981', 'Bridges development and operations for faster delivery.', true),
+    (6,  'AI/ML Engineer',          'psychology',      '#ec4899', 'AI and machine learning are transforming every sector.', true),
+    (7,  'UI/UX Designer',          'design-services', '#f59e0b', 'User experience is a key differentiator for products.', true),
+    (8,  'Full Stack Engineer',     'layers',          '#06b6d4', 'Versatile developers who can work across the stack.', true),
+    (9,  'Mobile App Developer',    'smartphone',      '#6366f1', 'Mobile-first experiences remain in high demand.', true),
+    (10, 'IT Systems Architect',    'account-tree',    '#84cc16', 'Designs and oversees complex technology systems.', true)
+)
+INSERT INTO public.in_demand_roles (rank, title, icon, accent_color, reason, is_active)
+SELECT s.rank, s.title, s.icon, s.accent_color, s.reason, s.is_active
+FROM seed s
+WHERE NOT EXISTS (
+  SELECT 1 FROM public.in_demand_roles r WHERE r.rank = s.rank
+);
 
 -- ============================================================
 -- 5. RPC: Increment job view count
 -- ============================================================
-CREATE OR REPLACE FUNCTION public.increment_job_views(job_uuid UUID)
+CREATE OR REPLACE FUNCTION public.increment_job_views(job_id UUID)
 RETURNS void
 LANGUAGE plpgsql
 SECURITY DEFINER
 AS $$
 BEGIN
-  UPDATE public.jobs SET view_count = COALESCE(view_count, 0) + 1 WHERE id = job_uuid;
+  UPDATE public.jobs SET view_count = COALESCE(view_count, 0) + 1 WHERE id = job_id;
 END;
 $$;
 
 -- ============================================================
 -- 6. RPC: Increment job application count
 -- ============================================================
-CREATE OR REPLACE FUNCTION public.increment_job_applications(job_uuid UUID)
+CREATE OR REPLACE FUNCTION public.increment_job_applications(job_id UUID)
 RETURNS void
 LANGUAGE plpgsql
 SECURITY DEFINER
 AS $$
 BEGIN
-  UPDATE public.jobs SET application_count = COALESCE(application_count, 0) + 1 WHERE id = job_uuid;
+  UPDATE public.jobs SET application_count = COALESCE(application_count, 0) + 1 WHERE id = job_id;
 END;
 $$;

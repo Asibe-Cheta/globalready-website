@@ -519,7 +519,7 @@ async function getJobById(id: string) {
 
 async function createJob(body: any) {
   const supabase = getSupabase();
-  const { title, company, country, city, job_type, sector, visa_sponsorship, salary_range, description, apply_url, posted_date, expires_at, is_active, is_featured, requirements } = body;
+  const { title, company, country, city, job_type, sector, visa_sponsorship, salary_range, description, apply_url, posted_date, expires_at, is_active, is_featured, requirements, source } = body;
   if (!title) return errorResponse('Title is required');
   if (!company) return errorResponse('Company is required');
 
@@ -541,6 +541,7 @@ async function createJob(body: any) {
       is_active: is_active !== false,
       is_featured: is_featured || false,
       requirements: requirements || {},
+      source: source || 'admin',
     })
     .select()
     .single();
@@ -551,7 +552,7 @@ async function createJob(body: any) {
 
 async function updateJob(id: string, body: any) {
   const supabase = getSupabase();
-  const fields = ['title', 'company', 'country', 'city', 'job_type', 'sector', 'visa_sponsorship', 'salary_range', 'description', 'apply_url', 'posted_date', 'expires_at', 'is_active', 'is_featured', 'requirements'];
+  const fields = ['title', 'company', 'country', 'city', 'job_type', 'sector', 'visa_sponsorship', 'salary_range', 'description', 'apply_url', 'posted_date', 'expires_at', 'is_active', 'is_featured', 'requirements', 'source'];
   const updates: Record<string, any> = {};
   for (const field of fields) {
     if (body[field] !== undefined) updates[field] = body[field];
