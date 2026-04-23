@@ -3,6 +3,7 @@ import Link from 'next/link'
 import Navigation from '@/components/Navigation'
 import Footer from '@/components/Footer'
 import { Shield } from 'lucide-react'
+import { OPERATOR_IDENTITY } from '@/lib/legal'
 
 export const metadata: Metadata = {
   title: 'Privacy Policy | GlobalReady',
@@ -21,7 +22,7 @@ export default function PrivacyPage() {
             </div>
             <div>
               <h1 className="text-3xl font-bold text-slate-900 dark:text-white">Privacy Policy</h1>
-              <p className="text-slate-600 dark:text-slate-400 text-sm mt-0.5">Last updated: February 2025</p>
+              <p className="text-slate-600 dark:text-slate-400 text-sm mt-0.5">Last updated: April 2026</p>
             </div>
           </div>
 
@@ -29,6 +30,9 @@ export default function PrivacyPage() {
             <p>
               GlobalReady (&quot;we&quot;, &quot;our&quot;, or &quot;us&quot;) is committed to protecting your privacy. This Privacy Policy explains how we collect, use, store, and share information when you use our website and mobile application (the &quot;Service&quot;).
             </p>
+
+            <h2 className="text-xl font-semibold text-slate-900 dark:text-white mt-8">Operator</h2>
+            <p>{OPERATOR_IDENTITY}</p>
 
             <h2 className="text-xl font-semibold text-slate-900 dark:text-white mt-8">Information We Collect</h2>
             <p>

@@ -2,6 +2,7 @@
 
 import { Suspense, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
+import Link from 'next/link'
 import { Globe, Loader2, Eye, EyeOff } from 'lucide-react'
 
 function AdminLoginForm() {
@@ -105,6 +106,9 @@ function AdminLoginForm() {
         </form>
         <p className="text-slate-500 text-xs text-center mt-6">
           Contact your team for the admin password.
+        </p>
+        <p className="text-slate-500 text-xs text-center mt-3">
+          <Link href="/terms" className="text-primary hover:underline">Terms</Link> · <Link href="/privacy" className="text-primary hover:underline">Privacy</Link>
         </p>
       </div>
     </div>

@@ -69,11 +69,19 @@ export default function SupportPage() {
               <div>
                 <h2 className="text-lg font-semibold text-slate-900 dark:text-white mb-1">Privacy & legal</h2>
                 <p className="mb-2">
-                  For how we collect, use, and protect your data, see our Privacy Policy.
+                  For how we collect, use, and protect your data, see our Privacy Policy. For platform terms, billing, and cancellation details, see our Terms and Billing page.
                 </p>
-                <Link href="/privacy" className="text-primary font-medium hover:underline">
-                  View Privacy Policy →
-                </Link>
+                <div className="flex flex-wrap gap-3">
+                  <Link href="/privacy" className="text-primary font-medium hover:underline">
+                    View Privacy Policy →
+                  </Link>
+                  <Link href="/terms" className="text-primary font-medium hover:underline">
+                    View Terms of Service →
+                  </Link>
+                  <Link href="/billing" className="text-primary font-medium hover:underline">
+                    Billing & cancellation →
+                  </Link>
+                </div>
               </div>
             </div>
           </div>

@@ -6,6 +6,7 @@ import Link from 'next/link'
 import Navigation from '@/components/Navigation'
 import Footer from '@/components/Footer'
 import { Check, Loader2 } from 'lucide-react'
+import { OPERATOR_IDENTITY } from '@/lib/legal'
 
 function UpgradeContent() {
   const searchParams = useSearchParams()
@@ -80,6 +81,9 @@ function UpgradeContent() {
           <p className="text-slate-600 dark:text-slate-400 text-center mb-10">
             €9.99/month · Unlimited CVs, AI tailoring, full job links. Cancel anytime.
           </p>
+          <div className="rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-[#1a2432] p-4 text-sm text-slate-600 dark:text-slate-300 mb-6">
+            You are subscribing to GlobalReady Pro for €9.99 per month. Your subscription renews automatically unless cancelled before your next billing date. GlobalReady also offers a free plan with limited access. Some job opportunities may link to third-party platforms that require separate registration, subscription, or fees.
+          </div>
 
           {uid ? (
             <>
@@ -155,6 +159,9 @@ function UpgradeContent() {
               </p>
             </div>
           )}
+          <p className="text-xs text-slate-500 dark:text-slate-500 text-center mt-6">
+            {OPERATOR_IDENTITY} · <Link href="/terms" className="text-primary hover:underline">Terms</Link> · <Link href="/privacy" className="text-primary hover:underline">Privacy</Link> · <Link href="/billing" className="text-primary hover:underline">Billing & cancellation</Link>
+          </p>
         </div>
       </section>
       <Footer />

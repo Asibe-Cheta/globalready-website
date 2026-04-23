@@ -3,6 +3,7 @@
 import { motion } from 'framer-motion'
 import { Check } from 'lucide-react'
 import Link from 'next/link'
+import { AI_DISCLOSURE } from '@/lib/legal'
 
 const freePlan = {
   name: 'Free',
@@ -101,6 +102,9 @@ export default function Pricing() {
             </motion.div>
           ))}
         </div>
+        <p className="text-xs text-slate-500 dark:text-slate-500 mt-6 text-center max-w-3xl mx-auto">
+          {AI_DISCLOSURE}
+        </p>
       </div>
     </section>
   )

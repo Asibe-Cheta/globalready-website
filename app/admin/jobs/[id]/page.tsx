@@ -113,9 +113,14 @@ export default function JobDetailPage() {
         </div>
         {job.description && <p className="mt-4 text-slate-300 whitespace-pre-wrap">{job.description}</p>}
         {job.apply_url && (
-          <a href={job.apply_url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 mt-4 text-[#0d6cf2] hover:underline">
-            <ExternalLink className="w-4 h-4" /> Apply
-          </a>
+          <div className="mt-4">
+            <a href={job.apply_url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 text-[#0d6cf2] hover:underline">
+              <ExternalLink className="w-4 h-4" /> Apply
+            </a>
+            <p className="text-xs text-slate-500 mt-2">
+              Some opportunities are hosted on third-party platforms and may have their own access requirements, subscriptions, or fees.
+            </p>
+          </div>
         )}
       </div>
 

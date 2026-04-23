@@ -67,6 +67,9 @@ export default function AdminJobsPage() {
         <div>
           <h1 className="text-3xl font-bold text-white mb-2">Jobs</h1>
           <p className="text-slate-400">Manage job listings. Data is synced to the mobile app Browse Jobs flow.</p>
+          <p className="text-slate-500 text-xs mt-2">
+            Some opportunities are hosted on third-party platforms and may have their own access requirements, subscriptions, or fees.
+          </p>
         </div>
         <Link
           href="/admin/jobs/new"

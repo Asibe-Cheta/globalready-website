@@ -3,6 +3,7 @@
 import { motion } from 'framer-motion'
 import { Globe } from 'lucide-react'
 import Link from 'next/link'
+import { OPERATOR_IDENTITY } from '@/lib/legal'
 
 const footerLinks = {
   Product: [
@@ -17,8 +18,8 @@ const footerLinks = {
   ],
   Legal: [
     { label: 'Privacy Policy', href: '/privacy' },
+    { label: 'Terms of Service', href: '/terms' },
     { label: 'Support', href: '/support' },
-    { label: 'Terms of Service', href: '#' },
     { label: 'Disclaimer', href: '#disclaimer' },
   ],
 }
@@ -85,6 +86,9 @@ export default function Footer() {
         >
           <p className="text-sm text-slate-600 dark:text-slate-500">
             © {currentYear} GlobalReady. All rights reserved.
+          </p>
+          <p className="text-xs text-slate-500 dark:text-slate-500 mt-2">
+            {OPERATOR_IDENTITY}
           </p>
         </motion.div>
       </div>

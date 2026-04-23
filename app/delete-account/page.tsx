@@ -84,7 +84,7 @@ export default function DeleteAccountPage() {
           © {new Date().getFullYear()} GlobalReady &nbsp;·&nbsp;
           <Link href="/privacy" className="text-primary hover:underline">Privacy Policy</Link>
           &nbsp;·&nbsp;
-          <a href="#" className="text-primary hover:underline">Terms of Service</a>
+          <Link href="/terms" className="text-primary hover:underline">Terms of Service</Link>
         </footer>
       </section>
       <Footer />

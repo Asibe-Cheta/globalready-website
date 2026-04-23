@@ -2,19 +2,20 @@
 
 import { motion } from 'framer-motion'
 import { FileText, Target, TrendingUp } from 'lucide-react'
+import { AI_DISCLOSURE } from '@/lib/legal'
 
 const solutions = [
   {
     icon: FileText,
     title: "Build ATS-Optimized CVs",
     description: "Create international-standard CVs that pass Applicant Tracking Systems.",
-    badge: "$7 ATS Pro",
+    badge: "Included in Pro",
   },
   {
     icon: Target,
     title: "Job-Targeted Rewrites",
     description: "Optimize your CV for specific job roles with keyword matching.",
-    badge: "$10 per rewrite",
+    badge: "Included in Pro",
   },
   {
     icon: TrendingUp,
@@ -63,6 +64,9 @@ export default function SolutionSection() {
             </motion.div>
           ))}
         </div>
+        <p className="text-xs text-slate-500 dark:text-slate-500 mt-6 text-center max-w-3xl mx-auto">
+          {AI_DISCLOSURE}
+        </p>
       </div>
     </section>
   )
