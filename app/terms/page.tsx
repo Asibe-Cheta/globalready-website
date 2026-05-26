@@ -4,6 +4,7 @@ import Navigation from '@/components/Navigation'
 import Footer from '@/components/Footer'
 import { FileText } from 'lucide-react'
 import { OPERATOR_IDENTITY, AI_DISCLOSURE } from '@/lib/legal'
+import { pricingPlans } from '@/lib/pricing-plans'
 
 export const metadata: Metadata = {
   title: 'Terms of Service | GlobalReady',
@@ -36,7 +37,15 @@ export default function TermsPage() {
 
             <h2 className="text-xl font-semibold text-slate-900 dark:text-white mt-8">Plans and Billing</h2>
             <p>
-              GlobalReady offers a free plan with limited access and a paid plan, GlobalReady Pro, billed at EUR 9.99 per month. Pro renews automatically unless cancelled before your next billing date.
+              GlobalReady offers a free plan with limited access and multiple paid GlobalReady Pro access plans:
+            </p>
+            <ul className="list-disc pl-6 space-y-2">
+              {pricingPlans.map((plan) => (
+                <li key={plan.id}>{plan.name}: {plan.price} {plan.period}</li>
+              ))}
+            </ul>
+            <p>
+              Recurring plans renew automatically unless cancelled before your next billing date. One-time access plans do not automatically renew and expire at the end of the selected access period.
             </p>
             <p>
               Some opportunities shown in GlobalReady may link to third-party platforms that have separate registration steps, subscriptions, or fees.
@@ -44,7 +53,7 @@ export default function TermsPage() {
 
             <h2 className="text-xl font-semibold text-slate-900 dark:text-white mt-8">Cancellation</h2>
             <p>
-              You can cancel your subscription from your account billing settings or by contacting support at{' '}
+              You can cancel recurring subscriptions from your account billing settings or by contacting support at{' '}
               <a href="mailto:contact@globalready.tech" className="text-primary hover:underline">contact@globalready.tech</a>.
               Cancellation stops renewal at the end of the current billing period.
             </p>

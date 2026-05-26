@@ -7,15 +7,22 @@ import Navigation from '@/components/Navigation'
 import Footer from '@/components/Footer'
 import { Check, Loader2 } from 'lucide-react'
 import { OPERATOR_IDENTITY } from '@/lib/legal'
+import { getPricingPlan, pricingPlans, type PlanId } from '@/lib/pricing-plans'
 
 function UpgradeContent() {
   const searchParams = useSearchParams()
   const uid = searchParams.get('uid')
+  const [selectedPlanId, setSelectedPlanId] = useState<PlanId>(getPricingPlan(searchParams.get('plan')).id)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [email, setEmail] = useState('')
   const [emailLoading, setEmailLoading] = useState(false)
   const [emailError, setEmailError] = useState('')
+
+  const selectedPlan = getPricingPlan(selectedPlanId)
+  const recurringDisclosure = selectedPlan.checkoutMode === 'subscription'
+    ? 'Your subscription renews automatically unless cancelled before your next billing date.'
+    : 'This is a one-time payment for the selected access period and does not automatically renew.'
 
   async function handleGetPro() {
     if (!uid) return
@@ -25,7 +32,7 @@ function UpgradeContent() {
       const res = await fetch('/api/create-checkout-session', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ uid }),
+        body: JSON.stringify({ uid, plan: selectedPlanId }),
       })
       const data = await res.json().catch(() => ({}))
       if (!res.ok) {
@@ -51,7 +58,7 @@ function UpgradeContent() {
       const res = await fetch('/api/create-checkout-session', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email }),
+        body: JSON.stringify({ email, plan: selectedPlanId }),
       })
       const data = await res.json().catch(() => ({}))
       if (!res.ok) {
@@ -79,23 +86,51 @@ function UpgradeContent() {
             GlobalReady Pro
           </h1>
           <p className="text-slate-600 dark:text-slate-400 text-center mb-10">
-            €9.99/month · Unlimited CVs, AI tailoring, full job links. Cancel anytime.
+            Unlock job application links, download your CV, tailor your CV, check your fit, generate cover letters and apply with more confidence.
           </p>
           <div className="rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-[#1a2432] p-4 text-sm text-slate-600 dark:text-slate-300 mb-6">
-            You are subscribing to GlobalReady Pro for €9.99 per month. Your subscription renews automatically unless cancelled before your next billing date. GlobalReady also offers a free plan with limited access. Some job opportunities may link to third-party platforms that require separate registration, subscription, or fees.
+            Premium access activates immediately after successful payment. When access expires or is cancelled, you return to the Free Plan automatically unless stated otherwise at checkout. You are purchasing {selectedPlan.name} for {selectedPlan.price} {selectedPlan.period}. {recurringDisclosure} Some job opportunities may link to third-party platforms that require separate registration, subscription, or fees.
+          </div>
+
+          <div className="grid sm:grid-cols-2 gap-4 mb-6">
+            {pricingPlans.map((plan) => (
+              <button
+                key={plan.id}
+                type="button"
+                onClick={() => setSelectedPlanId(plan.id)}
+                className={`text-left rounded-2xl border p-4 transition ${
+                  selectedPlanId === plan.id
+                    ? 'border-[#0d6cf2] bg-[#0d6cf2]/10'
+                    : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-[#1a2432] hover:border-[#0d6cf2]/60'
+                }`}
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="font-semibold text-slate-900 dark:text-white">{plan.name}</p>
+                    <p className="text-sm text-slate-500 dark:text-slate-400">{plan.description}</p>
+                  </div>
+                  {plan.badge && (
+                    <span className="text-[10px] font-bold uppercase rounded-full bg-[#0bda5e] text-black px-2 py-1">
+                      {plan.badge}
+                    </span>
+                  )}
+                </div>
+                {plan.message && (
+                  <p className="text-xs text-[#0bda5e] font-medium mt-2">{plan.message}</p>
+                )}
+                <p className="mt-3">
+                  <span className="text-2xl font-bold text-[#0d6cf2]">{plan.price}</span>{' '}
+                  <span className="text-sm text-slate-500 dark:text-slate-400">{plan.period}</span>
+                </p>
+              </button>
+            ))}
           </div>
 
           {uid ? (
             <>
               <div className="rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#1a2432] p-8 mb-6">
                 <ul className="space-y-3 mb-8">
-                  {[
-                    'Everything in Free',
-                    'Unlimited CV downloads',
-                    'Unlimited AI tailoring',
-                    'Full job links',
-                    'Cancel anytime',
-                  ].map((feature, i) => (
+                  {['Everything in Free Plan', ...selectedPlan.features, 'Cancel anytime on recurring plans'].map((feature, i) => (
                     <li key={i} className="flex items-center gap-3">
                       <Check className="w-5 h-5 text-[#0bda5e] flex-shrink-0" />
                       <span className="text-slate-700 dark:text-slate-300">{feature}</span>
@@ -116,7 +151,7 @@ function UpgradeContent() {
                       Redirecting to checkout…
                     </>
                   ) : (
-                    'Get Pro →'
+                    `Continue with ${selectedPlan.name} →`
                   )}
                 </button>
               </div>
@@ -151,7 +186,7 @@ function UpgradeContent() {
                     Redirecting to checkout…
                   </>
                 ) : (
-                  'Get Pro →'
+                  `Continue with ${selectedPlan.name} →`
                 )}
               </button>
               <p className="text-slate-500 dark:text-slate-400 text-xs mt-4 text-center">

@@ -3,13 +3,21 @@ import Link from 'next/link'
 import Navigation from '@/components/Navigation'
 import Footer from '@/components/Footer'
 import { CheckCircle2 } from 'lucide-react'
+import { getPricingPlan } from '@/lib/pricing-plans'
 
 export const metadata: Metadata = {
   title: 'You\'re Pro! | GlobalReady',
   description: 'Your GlobalReady Pro subscription is active.',
 }
 
-export default function UpgradeSuccessPage() {
+export default async function UpgradeSuccessPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ plan?: string }>
+}) {
+  const params = await searchParams
+  const plan = getPricingPlan(params.plan)
+
   return (
     <main className="min-h-screen">
       <Navigation />
@@ -21,8 +29,11 @@ export default function UpgradeSuccessPage() {
           <h1 className="text-3xl font-bold text-slate-900 dark:text-white mb-3">
             You&apos;re Pro!
           </h1>
+          <p className="text-slate-600 dark:text-slate-400 mb-3">
+            Your payment for <strong>{plan.name}</strong> was successful.
+          </p>
           <p className="text-slate-600 dark:text-slate-400 mb-8">
-            Your payment was successful. <strong>Reopen the GlobalReady app</strong> (or bring it to the foreground) to see your Pro subscription — it may take a few seconds to sync.
+            <strong>Reopen the GlobalReady app</strong> (or bring it to the foreground) to see your premium access — it may take a few seconds to sync.
           </p>
           <Link
             href="/"

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import Stripe from 'stripe'
 import { createClient } from '@supabase/supabase-js'
+import { DEFAULT_PLAN_ID, getPricingPlan, isPlanId, type PlanId, type PricingPlan } from '@/lib/pricing-plans'
 
 const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://globalready.tech'
 
@@ -17,11 +18,23 @@ function getSupabaseAdmin() {
   return createClient(url, key, { auth: { autoRefreshToken: false, persistSession: false } })
 }
 
+function getPriceId(plan: PricingPlan) {
+  const priceMap: Record<PlanId, string | undefined> = {
+    seven_day: process.env.STRIPE_PRICE_SEVEN_DAY || process.env.STRIPE_SEVEN_DAY_PRICE_ID,
+    monthly_pro: process.env.STRIPE_PRICE_MONTHLY_PRO || process.env.STRIPE_MONTHLY_PRO_PRICE_ID || process.env.STRIPE_PRICE_ID || process.env.STRIPE_PRO_PRICE_ID,
+    four_month_pro: process.env.STRIPE_PRICE_FOUR_MONTH_PRO || process.env.STRIPE_FOUR_MONTH_PRO_PRICE_ID,
+    yearly_pro: process.env.STRIPE_PRICE_YEARLY_PRO || process.env.STRIPE_YEARLY_PRO_PRICE_ID,
+  }
+  return priceMap[plan.id]
+}
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json().catch(() => ({}))
     const uid = typeof body?.uid === 'string' ? body.uid.trim() : null
     const email = typeof body?.email === 'string' ? body.email.trim().toLowerCase() : null
+    const requestedPlan = typeof body?.plan === 'string' ? body.plan.trim() : DEFAULT_PLAN_ID
+    const plan = getPricingPlan(isPlanId(requestedPlan) ? requestedPlan : DEFAULT_PLAN_ID)
 
     let userId: string | null = uid
 
@@ -52,9 +65,9 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const priceId = process.env.STRIPE_PRICE_ID || process.env.STRIPE_PRO_PRICE_ID
+    const priceId = getPriceId(plan)
     if (!process.env.STRIPE_SECRET_KEY || !priceId) {
-      console.error('Missing STRIPE_SECRET_KEY or STRIPE_PRICE_ID')
+      console.error(`Missing STRIPE_SECRET_KEY or Stripe price env for plan ${plan.id}`)
       return NextResponse.json(
         { error: 'Checkout is not configured.' },
         { status: 500 }
@@ -62,8 +75,12 @@ export async function POST(request: NextRequest) {
     }
 
     const stripe = getStripe()
-    const session = await stripe.checkout.sessions.create({
-      mode: 'subscription',
+    const metadata = {
+      user_id: userId,
+      plan_type: plan.id,
+    }
+    const sessionParams: Stripe.Checkout.SessionCreateParams = {
+      mode: plan.checkoutMode,
       client_reference_id: userId,
       allow_promotion_codes: true,
       line_items: [
@@ -72,17 +89,27 @@ export async function POST(request: NextRequest) {
           quantity: 1,
         },
       ],
-      metadata: {
-        user_id: userId,
-      },
-      subscription_data: {
+      metadata,
+      customer_email: email || undefined,
+      success_url: `${BASE_URL}/upgrade-success?session_id={CHECKOUT_SESSION_ID}&plan=${plan.id}`,
+      cancel_url: `${BASE_URL}/upgrade?uid=${encodeURIComponent(userId)}&plan=${plan.id}`,
+    }
+
+    if (plan.checkoutMode === 'subscription') {
+      sessionParams.subscription_data = {
         metadata: {
-          user_id: userId,
+          ...metadata,
         },
-      },
-      success_url: `${BASE_URL}/upgrade-success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${BASE_URL}/#pricing`,
-    })
+      }
+    } else {
+      sessionParams.payment_intent_data = {
+        metadata: {
+          ...metadata,
+        },
+      }
+    }
+
+    const session = await stripe.checkout.sessions.create(sessionParams)
 
     if (!session.url) {
       return NextResponse.json({ error: 'Could not create checkout session.' }, { status: 500 })

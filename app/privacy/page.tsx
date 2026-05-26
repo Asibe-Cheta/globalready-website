@@ -45,6 +45,7 @@ export default function PrivacyPage() {
               <li><strong>Name</strong> — We collect your name for your profile and to personalize the Service.</li>
               <li><strong>Photos (profile picture)</strong> — You may upload a profile picture; we store and display it as part of your account.</li>
               <li><strong>Payment information</strong> — Payments are processed by <strong>Stripe</strong>. We do not store your full card details on our servers. Stripe collects and processes payment information in accordance with their privacy policy. We may receive limited transaction data (e.g. last four digits, billing country) for support and receipts.</li>
+              <li><strong>Subscription and plan information</strong> — We may store your selected paid plan, subscription status, access expiry or renewal date, Stripe customer ID, and related billing metadata so the website and mobile app can recognize your access.</li>
             </ul>
 
             <h3 className="text-lg font-medium text-slate-900 dark:text-white mt-6">Information collected automatically</h3>

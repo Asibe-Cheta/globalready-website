@@ -6,7 +6,7 @@ A comprehensive web-based platform for building ATS-ready CVs and discovering in
 
 - 🌍 **Global Opportunities** - Prepare for international job opportunities
 - 📄 **ATS-Optimized CVs** - Create CVs that pass Applicant Tracking Systems
-- 💼 **Professional Services** - ATS Pro ($7) and Rewrite ($10) options
+- 💼 **GlobalReady Pro** - Premium access plans for CV downloads, AI tailoring, job-fit checks, and full job links
 - 📊 **Admin Dashboard** - Comprehensive admin panel for managing the platform
 - 🎨 **Modern UI** - Beautiful dark theme with light mode support
 - ⚡ **Fast & Responsive** - Built with Next.js 14 and Tailwind CSS
