@@ -1,13 +1,43 @@
 'use client'
 
 import { useSearchParams } from 'next/navigation'
-import { useState, Suspense } from 'react'
+import { useState, Suspense, useEffect, useCallback } from 'react'
 import Link from 'next/link'
 import Navigation from '@/components/Navigation'
 import Footer from '@/components/Footer'
-import { Check, Loader2 } from 'lucide-react'
+import { Check, ExternalLink, Loader2 } from 'lucide-react'
 import { OPERATOR_IDENTITY } from '@/lib/legal'
 import { getPricingPlan, pricingPlans, type PlanId } from '@/lib/pricing-plans'
+import { buildSelarCheckoutUrl, getSelarProductCode, isSelarConfigured } from '@/lib/selar-checkout'
+
+function SelarCheckoutButton({
+  planId,
+  onPay,
+  disabled,
+  className = 'mt-3 w-full',
+}: {
+  planId: PlanId
+  onPay: (planId: PlanId) => void
+  disabled?: boolean
+  className?: string
+}) {
+  if (!isSelarConfigured(planId)) return null
+
+  return (
+    <button
+      type="button"
+      onClick={(event) => {
+        event.stopPropagation()
+        onPay(planId)
+      }}
+      disabled={disabled}
+      className={`${className} flex items-center justify-center gap-2 rounded-xl border border-slate-300 dark:border-slate-600 bg-transparent px-4 py-2.5 text-sm font-medium text-slate-700 dark:text-slate-200 transition hover:border-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50 disabled:cursor-not-allowed disabled:opacity-50`}
+    >
+      Pay with Selar instead
+      <ExternalLink className="h-4 w-4" />
+    </button>
+  )
+}
 
 function UpgradeContent() {
   const searchParams = useSearchParams()
@@ -18,11 +48,46 @@ function UpgradeContent() {
   const [email, setEmail] = useState('')
   const [emailLoading, setEmailLoading] = useState(false)
   const [emailError, setEmailError] = useState('')
+  const [userEmail, setUserEmail] = useState<string | null>(null)
+  const [userEmailLoading, setUserEmailLoading] = useState(false)
 
   const selectedPlan = getPricingPlan(selectedPlanId)
   const recurringDisclosure = selectedPlan.checkoutMode === 'subscription'
     ? 'Your subscription renews automatically unless cancelled before your next billing date.'
     : 'This is a one-time payment for the selected access period and does not automatically renew.'
+  const selarEmail = uid ? userEmail : email.trim() || null
+  const selarDisabled = Boolean(uid && userEmailLoading)
+
+  useEffect(() => {
+    if (!uid) return
+
+    let cancelled = false
+    setUserEmailLoading(true)
+
+    fetch(`/api/upgrade/user-email?uid=${encodeURIComponent(uid)}`)
+      .then((res) => res.json().catch(() => ({})))
+      .then((data) => {
+        if (!cancelled && typeof data.email === 'string') {
+          setUserEmail(data.email)
+        }
+      })
+      .catch(() => {})
+      .finally(() => {
+        if (!cancelled) setUserEmailLoading(false)
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [uid])
+
+  const handleSelarPay = useCallback((planId: PlanId) => {
+    const productCode = getSelarProductCode(planId)
+    if (!productCode) return
+
+    const checkoutUrl = buildSelarCheckoutUrl(productCode, selarEmail)
+    window.open(checkoutUrl, '_blank', 'noopener,noreferrer')
+  }, [selarEmail])
 
   async function handleGetPro() {
     if (!uid) return
@@ -94,11 +159,18 @@ function UpgradeContent() {
 
           <div className="grid sm:grid-cols-2 gap-4 mb-6">
             {pricingPlans.map((plan) => (
-              <button
+              <div
                 key={plan.id}
-                type="button"
+                role="button"
+                tabIndex={0}
                 onClick={() => setSelectedPlanId(plan.id)}
-                className={`text-left rounded-2xl border p-4 transition ${
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter' || event.key === ' ') {
+                    event.preventDefault()
+                    setSelectedPlanId(plan.id)
+                  }
+                }}
+                className={`text-left rounded-2xl border p-4 transition cursor-pointer ${
                   selectedPlanId === plan.id
                     ? 'border-[#0d6cf2] bg-[#0d6cf2]/10'
                     : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-[#1a2432] hover:border-[#0d6cf2]/60'
@@ -122,7 +194,12 @@ function UpgradeContent() {
                   <span className="text-2xl font-bold text-[#0d6cf2]">{plan.price}</span>{' '}
                   <span className="text-sm text-slate-500 dark:text-slate-400">{plan.period}</span>
                 </p>
-              </button>
+                <SelarCheckoutButton
+                  planId={plan.id}
+                  onPay={handleSelarPay}
+                  disabled={selarDisabled}
+                />
+              </div>
             ))}
           </div>
 
@@ -154,6 +231,17 @@ function UpgradeContent() {
                     `Continue with ${selectedPlan.name} →`
                   )}
                 </button>
+                <SelarCheckoutButton
+                  planId={selectedPlanId}
+                  onPay={handleSelarPay}
+                  disabled={selarDisabled}
+                  className="mt-3 w-full"
+                />
+                {userEmailLoading && isSelarConfigured(selectedPlanId) && (
+                  <p className="mt-2 text-xs text-slate-500 dark:text-slate-400 text-center">
+                    Loading your account email for Selar checkout…
+                  </p>
+                )}
               </div>
             </>
           ) : (
@@ -189,6 +277,11 @@ function UpgradeContent() {
                   `Continue with ${selectedPlan.name} →`
                 )}
               </button>
+              <SelarCheckoutButton
+                planId={selectedPlanId}
+                onPay={handleSelarPay}
+                className="mt-3 w-full"
+              />
               <p className="text-slate-500 dark:text-slate-400 text-xs mt-4 text-center">
                 No account yet? <Link href="/#pricing" className="text-primary hover:underline">Sign up in the app</Link> first, then return here.
               </p>
