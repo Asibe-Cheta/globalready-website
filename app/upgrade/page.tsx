@@ -42,10 +42,11 @@ function SelarCheckoutButton({
 function UpgradeContent() {
   const searchParams = useSearchParams()
   const uid = searchParams.get('uid')
+  const emailFromUrl = searchParams.get('email')?.trim() ?? ''
   const [selectedPlanId, setSelectedPlanId] = useState<PlanId>(getPricingPlan(searchParams.get('plan')).id)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [email, setEmail] = useState('')
+  const [email, setEmail] = useState(emailFromUrl)
   const [emailLoading, setEmailLoading] = useState(false)
   const [emailError, setEmailError] = useState('')
   const [userEmail, setUserEmail] = useState<string | null>(null)
