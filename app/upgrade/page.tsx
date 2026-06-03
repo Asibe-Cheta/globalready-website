@@ -5,37 +5,67 @@ import { useState, Suspense, useEffect, useCallback } from 'react'
 import Link from 'next/link'
 import Navigation from '@/components/Navigation'
 import Footer from '@/components/Footer'
-import { Check, ExternalLink, Loader2 } from 'lucide-react'
+import { Check, CreditCard, ExternalLink, Loader2 } from 'lucide-react'
 import { OPERATOR_IDENTITY } from '@/lib/legal'
 import { getPricingPlan, pricingPlans, type PlanId } from '@/lib/pricing-plans'
 import { buildSelarCheckoutUrl, getSelarProductCode, isSelarConfigured } from '@/lib/selar-checkout'
 
-function SelarCheckoutButton({
+function PlanPaymentButtons({
   planId,
-  onPay,
-  disabled,
-  className = 'mt-3 w-full',
+  onStripe,
+  onSelar,
+  stripeLoading,
+  stripeDisabled,
+  selarDisabled,
+  compact = false,
 }: {
   planId: PlanId
-  onPay: (planId: PlanId) => void
-  disabled?: boolean
-  className?: string
+  onStripe: (planId: PlanId) => void
+  onSelar: (planId: PlanId) => void
+  stripeLoading?: boolean
+  stripeDisabled?: boolean
+  selarDisabled?: boolean
+  compact?: boolean
 }) {
-  if (!isSelarConfigured(planId)) return null
+  const showSelar = isSelarConfigured(planId)
+  const sizeClass = compact ? 'text-xs sm:text-sm py-2.5' : 'text-sm sm:text-base py-3'
 
   return (
-    <button
-      type="button"
-      onClick={(event) => {
-        event.stopPropagation()
-        onPay(planId)
-      }}
-      disabled={disabled}
-      className={`${className} flex items-center justify-center gap-2 rounded-xl border border-slate-300 dark:border-slate-600 bg-transparent px-4 py-2.5 text-sm font-medium text-slate-700 dark:text-slate-200 transition hover:border-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50 disabled:cursor-not-allowed disabled:opacity-50`}
+    <div
+      className={`mt-4 flex flex-col gap-2.5 ${compact ? '' : 'sm:flex-row sm:gap-3'}`}
+      onClick={(event) => event.stopPropagation()}
+      onKeyDown={(event) => event.stopPropagation()}
     >
-      Pay with Selar instead
-      <ExternalLink className="h-4 w-4" />
-    </button>
+      <button
+        type="button"
+        onClick={() => onStripe(planId)}
+        disabled={stripeDisabled || stripeLoading}
+        className={`btn-stripe w-full flex items-center justify-center gap-2 ${sizeClass}`}
+      >
+        {stripeLoading ? (
+          <>
+            <Loader2 className="h-4 w-4 animate-spin shrink-0" />
+            <span>Opening Stripe…</span>
+          </>
+        ) : (
+          <>
+            <CreditCard className="h-4 w-4 shrink-0" aria-hidden />
+            <span className="font-semibold">Pay with Stripe</span>
+          </>
+        )}
+      </button>
+      {showSelar && (
+        <button
+          type="button"
+          onClick={() => onSelar(planId)}
+          disabled={selarDisabled}
+          className={`btn-selar w-full flex items-center justify-center gap-2 ${sizeClass}`}
+        >
+          <span className="font-semibold">Pay with Selar</span>
+          <ExternalLink className="h-4 w-4 shrink-0 opacity-90" aria-hidden />
+        </button>
+      )}
+    </div>
   )
 }
 
@@ -44,10 +74,9 @@ function UpgradeContent() {
   const uid = searchParams.get('uid')
   const emailFromUrl = searchParams.get('email')?.trim() ?? ''
   const [selectedPlanId, setSelectedPlanId] = useState<PlanId>(getPricingPlan(searchParams.get('plan')).id)
-  const [loading, setLoading] = useState(false)
+  const [stripeLoadingPlanId, setStripeLoadingPlanId] = useState<PlanId | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [email, setEmail] = useState(emailFromUrl)
-  const [emailLoading, setEmailLoading] = useState(false)
   const [emailError, setEmailError] = useState('')
   const [userEmail, setUserEmail] = useState<string | null>(null)
   const [userEmailLoading, setUserEmailLoading] = useState(false)
@@ -58,6 +87,7 @@ function UpgradeContent() {
     : 'This is a one-time payment for the selected access period and does not automatically renew.'
   const selarEmail = uid ? userEmail : email.trim() || null
   const selarDisabled = Boolean(uid && userEmailLoading)
+  const stripeDisabledNoEmail = !uid && !email.trim()
 
   useEffect(() => {
     if (!uid) return
@@ -90,57 +120,45 @@ function UpgradeContent() {
     window.open(checkoutUrl, '_blank', 'noopener,noreferrer')
   }, [selarEmail])
 
-  async function handleGetPro() {
-    if (!uid) return
-    setLoading(true)
-    setError(null)
-    try {
-      const res = await fetch('/api/create-checkout-session', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ uid, plan: selectedPlanId }),
-      })
-      const data = await res.json().catch(() => ({}))
-      if (!res.ok) {
-        setError(data.error || data.message || 'Something went wrong.')
-        setLoading(false)
-        return
-      }
-      if (data.url) {
-        window.location.href = data.url
-        return
-      }
-      setError('Could not start checkout.')
-    } catch {
-      setError('Network error. Please try again.')
+  async function startStripeCheckout(planId: PlanId) {
+    if (!uid && !email.trim()) {
+      setEmailError('Enter your GlobalReady account email first.')
+      return
     }
-    setLoading(false)
-  }
 
-  async function handleEmailCheckout() {
-    setEmailLoading(true)
+    setStripeLoadingPlanId(planId)
+    setError(null)
     setEmailError('')
+
     try {
       const res = await fetch('/api/create-checkout-session', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, plan: selectedPlanId }),
+        body: JSON.stringify(
+          uid ? { uid, plan: planId } : { email: email.trim(), plan: planId }
+        ),
       })
       const data = await res.json().catch(() => ({}))
       if (!res.ok) {
-        setEmailError(data.message || data.error || 'Something went wrong.')
-        setEmailLoading(false)
+        const message = data.error || data.message || 'Something went wrong.'
+        if (uid) setError(message)
+        else setEmailError(message)
+        setStripeLoadingPlanId(null)
         return
       }
       if (data.url) {
         window.location.href = data.url
         return
       }
-      setEmailError('Could not start checkout.')
+      const fallback = 'Could not start checkout.'
+      if (uid) setError(fallback)
+      else setEmailError(fallback)
     } catch {
-      setEmailError('Network error. Please try again.')
+      const fallback = 'Network error. Please try again.'
+      if (uid) setError(fallback)
+      else setEmailError(fallback)
     }
-    setEmailLoading(false)
+    setStripeLoadingPlanId(null)
   }
 
   return (
@@ -173,7 +191,7 @@ function UpgradeContent() {
                 }}
                 className={`text-left rounded-2xl border p-4 transition cursor-pointer ${
                   selectedPlanId === plan.id
-                    ? 'border-[#0d6cf2] bg-[#0d6cf2]/10'
+                    ? 'border-[#0d6cf2] bg-[#0d6cf2]/10 ring-1 ring-[#0d6cf2]/40'
                     : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-[#1a2432] hover:border-[#0d6cf2]/60'
                 }`}
               >
@@ -183,7 +201,7 @@ function UpgradeContent() {
                     <p className="text-sm text-slate-500 dark:text-slate-400">{plan.description}</p>
                   </div>
                   {plan.badge && (
-                    <span className="text-[10px] font-bold uppercase rounded-full bg-[#0bda5e] text-black px-2 py-1">
+                    <span className="text-[10px] font-bold uppercase rounded-full bg-[#0bda5e] text-black px-2 py-1 shrink-0">
                       {plan.badge}
                     </span>
                   )}
@@ -195,56 +213,48 @@ function UpgradeContent() {
                   <span className="text-2xl font-bold text-[#0d6cf2]">{plan.price}</span>{' '}
                   <span className="text-sm text-slate-500 dark:text-slate-400">{plan.period}</span>
                 </p>
-                <SelarCheckoutButton
+                <PlanPaymentButtons
                   planId={plan.id}
-                  onPay={handleSelarPay}
-                  disabled={selarDisabled}
+                  onStripe={startStripeCheckout}
+                  onSelar={handleSelarPay}
+                  stripeLoading={stripeLoadingPlanId === plan.id}
+                  stripeDisabled={stripeDisabledNoEmail}
+                  selarDisabled={selarDisabled}
+                  compact
                 />
               </div>
             ))}
           </div>
 
           {uid ? (
-            <>
-              <div className="rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#1a2432] p-8 mb-6">
-                <ul className="space-y-3 mb-8">
-                  {['Everything in Free Plan', ...selectedPlan.features, 'Cancel anytime on recurring plans'].map((feature, i) => (
-                    <li key={i} className="flex items-center gap-3">
-                      <Check className="w-5 h-5 text-[#0bda5e] flex-shrink-0" />
-                      <span className="text-slate-700 dark:text-slate-300">{feature}</span>
-                    </li>
-                  ))}
-                </ul>
-                {error && (
-                  <p className="text-red-500 dark:text-red-400 text-sm mb-4">{error}</p>
-                )}
-                <button
-                  onClick={handleGetPro}
-                  disabled={loading}
-                  className="btn-primary w-full flex items-center justify-center gap-2"
-                >
-                  {loading ? (
-                    <>
-                      <Loader2 className="w-5 h-5 animate-spin" />
-                      Redirecting to checkout…
-                    </>
-                  ) : (
-                    `Continue with ${selectedPlan.name} →`
-                  )}
-                </button>
-                <SelarCheckoutButton
-                  planId={selectedPlanId}
-                  onPay={handleSelarPay}
-                  disabled={selarDisabled}
-                  className="mt-3 w-full"
-                />
-                {userEmailLoading && isSelarConfigured(selectedPlanId) && (
-                  <p className="mt-2 text-xs text-slate-500 dark:text-slate-400 text-center">
-                    Loading your account email for Selar checkout…
-                  </p>
-                )}
-              </div>
-            </>
+            <div className="rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#1a2432] p-8 mb-6">
+              <ul className="space-y-3 mb-6">
+                {['Everything in Free Plan', ...selectedPlan.features, 'Cancel anytime on recurring plans'].map((feature, i) => (
+                  <li key={i} className="flex items-center gap-3">
+                    <Check className="w-5 h-5 text-[#0bda5e] flex-shrink-0" />
+                    <span className="text-slate-700 dark:text-slate-300">{feature}</span>
+                  </li>
+                ))}
+              </ul>
+              <p className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-3 text-center">
+                Pay for <span className="text-[#0d6cf2]">{selectedPlan.name}</span> — {selectedPlan.price} {selectedPlan.period}
+              </p>
+              {error && (
+                <p className="text-red-500 dark:text-red-400 text-sm mb-4 text-center">{error}</p>
+              )}
+              <PlanPaymentButtons
+                planId={selectedPlanId}
+                onStripe={startStripeCheckout}
+                onSelar={handleSelarPay}
+                stripeLoading={stripeLoadingPlanId === selectedPlanId}
+                selarDisabled={selarDisabled}
+              />
+              {userEmailLoading && isSelarConfigured(selectedPlanId) && (
+                <p className="mt-3 text-xs text-slate-500 dark:text-slate-400 text-center">
+                  Loading your account email for Selar checkout…
+                </p>
+              )}
+            </div>
           ) : (
             <div className="rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#1a2432] p-8">
               <h2 className="text-xl font-semibold text-slate-900 dark:text-white mb-2">
@@ -259,29 +269,20 @@ function UpgradeContent() {
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="you@example.com"
                 className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/50 text-slate-900 dark:text-white placeholder:text-slate-400 mb-4 focus:outline-none focus:ring-2 focus:ring-primary"
-                disabled={emailLoading}
+                disabled={stripeLoadingPlanId !== null}
               />
               {emailError && (
                 <p className="text-red-500 dark:text-red-400 text-sm mb-4">{emailError}</p>
               )}
-              <button
-                onClick={handleEmailCheckout}
-                disabled={emailLoading || !email.trim()}
-                className="btn-primary w-full flex items-center justify-center gap-2"
-              >
-                {emailLoading ? (
-                  <>
-                    <Loader2 className="w-5 h-5 animate-spin" />
-                    Redirecting to checkout…
-                  </>
-                ) : (
-                  `Continue with ${selectedPlan.name} →`
-                )}
-              </button>
-              <SelarCheckoutButton
+              <p className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-3 text-center">
+                Pay for <span className="text-[#0d6cf2]">{selectedPlan.name}</span> — {selectedPlan.price} {selectedPlan.period}
+              </p>
+              <PlanPaymentButtons
                 planId={selectedPlanId}
-                onPay={handleSelarPay}
-                className="mt-3 w-full"
+                onStripe={startStripeCheckout}
+                onSelar={handleSelarPay}
+                stripeLoading={stripeLoadingPlanId === selectedPlanId}
+                stripeDisabled={stripeDisabledNoEmail}
               />
               <p className="text-slate-500 dark:text-slate-400 text-xs mt-4 text-center">
                 No account yet? <Link href="/#pricing" className="text-primary hover:underline">Sign up in the app</Link> first, then return here.
