@@ -269,6 +269,23 @@ If pricing changes again, update **both** the mobile constants and this document
 
 ---
 
+## Stripe webhook troubleshooting
+
+**Endpoint:** `https://bwgqzoplcgxguylerqsn.supabase.co/functions/v1/stripe-webhook`
+
+If Stripe emails about delivery failures, check in order:
+
+1. **Function deployed** — `supabase functions deploy stripe-webhook --project-ref bwgqzoplcgxguylerqsn` (repo includes `supabase/config.toml` with `verify_jwt = false`).
+2. **Supabase Edge Function secrets** (Dashboard → Edge Functions → stripe-webhook → Secrets):
+   - `STRIPE_SECRET_KEY` (live key)
+   - `STRIPE_WEBHOOK_SECRET` — signing secret from **this** webhook endpoint in Stripe Dashboard (live mode; not the CLI test secret)
+   - `SUPABASE_URL` / `SUPABASE_SERVICE_ROLE_KEY` (often auto-injected)
+3. **Stripe Dashboard** → Webhooks → endpoint → Events: `checkout.session.completed`, `customer.subscription.updated`, `customer.subscription.deleted`.
+4. **Resend failed events** after fixing — Stripe → Webhook → Recent deliveries → resend, or use “Send test webhook”.
+5. **Historical failures (e.g. from May 30)** — often caused by an empty/missing function before deploy, wrong `STRIPE_WEBHOOK_SECRET`, or JWT verification blocking Stripe (401). Payments can succeed while webhooks fail; use Admin → Subscriptions or Stripe to reconcile missed activations.
+
+---
+
 ## Selar (web + mobile)
 
 - Edge function: `https://bwgqzoplcgxguylerqsn.supabase.co/functions/v1/selar-webhook`
