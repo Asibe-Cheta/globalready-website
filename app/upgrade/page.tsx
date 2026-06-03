@@ -1,7 +1,7 @@
 'use client'
 
 import { useSearchParams } from 'next/navigation'
-import { useState, Suspense, useEffect, useCallback } from 'react'
+import { useState, Suspense, useEffect, useCallback, useRef } from 'react'
 import Link from 'next/link'
 import Navigation from '@/components/Navigation'
 import Footer from '@/components/Footer'
@@ -15,7 +15,6 @@ function PlanPaymentButtons({
   onStripe,
   onSelar,
   stripeLoading,
-  stripeDisabled,
   selarDisabled,
   compact = false,
 }: {
@@ -23,7 +22,6 @@ function PlanPaymentButtons({
   onStripe: (planId: PlanId) => void
   onSelar: (planId: PlanId) => void
   stripeLoading?: boolean
-  stripeDisabled?: boolean
   selarDisabled?: boolean
   compact?: boolean
 }) {
@@ -39,7 +37,7 @@ function PlanPaymentButtons({
       <button
         type="button"
         onClick={() => onStripe(planId)}
-        disabled={stripeDisabled || stripeLoading}
+        disabled={stripeLoading}
         className={`btn-stripe w-full flex items-center justify-center gap-2 ${sizeClass}`}
       >
         {stripeLoading ? (
@@ -80,6 +78,8 @@ function UpgradeContent() {
   const [emailError, setEmailError] = useState('')
   const [userEmail, setUserEmail] = useState<string | null>(null)
   const [userEmailLoading, setUserEmailLoading] = useState(false)
+  const emailInputRef = useRef<HTMLInputElement>(null)
+  const checkoutSectionRef = useRef<HTMLDivElement>(null)
 
   const selectedPlan = getPricingPlan(selectedPlanId)
   const recurringDisclosure = selectedPlan.checkoutMode === 'subscription'
@@ -87,7 +87,13 @@ function UpgradeContent() {
     : 'This is a one-time payment for the selected access period and does not automatically renew.'
   const selarEmail = uid ? userEmail : email.trim() || null
   const selarDisabled = Boolean(uid && userEmailLoading)
-  const stripeDisabledNoEmail = !uid && !email.trim()
+
+  function promptForEmail(planId: PlanId) {
+    setSelectedPlanId(planId)
+    setEmailError('Enter your GlobalReady account email below, then tap Pay with Stripe again.')
+    checkoutSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    window.setTimeout(() => emailInputRef.current?.focus(), 300)
+  }
 
   useEffect(() => {
     if (!uid) return
@@ -122,7 +128,7 @@ function UpgradeContent() {
 
   async function startStripeCheckout(planId: PlanId) {
     if (!uid && !email.trim()) {
-      setEmailError('Enter your GlobalReady account email first.')
+      promptForEmail(planId)
       return
     }
 
@@ -218,7 +224,6 @@ function UpgradeContent() {
                   onStripe={startStripeCheckout}
                   onSelar={handleSelarPay}
                   stripeLoading={stripeLoadingPlanId === plan.id}
-                  stripeDisabled={stripeDisabledNoEmail}
                   selarDisabled={selarDisabled}
                   compact
                 />
@@ -256,7 +261,7 @@ function UpgradeContent() {
               )}
             </div>
           ) : (
-            <div className="rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#1a2432] p-8">
+            <div ref={checkoutSectionRef} className="rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#1a2432] p-8">
               <h2 className="text-xl font-semibold text-slate-900 dark:text-white mb-2">
                 Enter your GlobalReady account email to link your subscription
               </h2>
@@ -264,9 +269,13 @@ function UpgradeContent() {
                 Use the same email you use in the GlobalReady app. Your Pro status will sync to the app after payment.
               </p>
               <input
+                ref={emailInputRef}
                 type="email"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(e) => {
+                  setEmail(e.target.value)
+                  if (emailError) setEmailError('')
+                }}
                 placeholder="you@example.com"
                 className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/50 text-slate-900 dark:text-white placeholder:text-slate-400 mb-4 focus:outline-none focus:ring-2 focus:ring-primary"
                 disabled={stripeLoadingPlanId !== null}
@@ -282,7 +291,6 @@ function UpgradeContent() {
                 onStripe={startStripeCheckout}
                 onSelar={handleSelarPay}
                 stripeLoading={stripeLoadingPlanId === selectedPlanId}
-                stripeDisabled={stripeDisabledNoEmail}
               />
               <p className="text-slate-500 dark:text-slate-400 text-xs mt-4 text-center">
                 No account yet? <Link href="/#pricing" className="text-primary hover:underline">Sign up in the app</Link> first, then return here.
