@@ -268,3 +268,25 @@ After running the SQL and deploying:
 - Featured jobs (`is_featured = true`) always appear first in the feed
 - Jobs are sorted by: featured first, then by posted date (newest first)
 - `source` on jobs defaults to `admin`; external ingestion should write provider values like `adzuna`, `remoteok`, `remotive`, `jobicy`, `wwr`.
+
+---
+
+## Job poster role (limited admin access)
+
+For someone who only sources and adds jobs manually (no access to users, subscriptions, settings, etc.):
+
+| Env var | Purpose |
+|---------|---------|
+| `ADMIN_PASSWORD` | Full admin — all dashboard sections |
+| `ADMIN_JOBS_PASSWORD` | **Job poster only** — `/admin/jobs` list + add job form |
+
+**Login:** same page — `https://globalready.tech/admin/login` — use the job-poster password.
+
+**What job posters can do:**
+- View the jobs list
+- Add jobs at `/admin/jobs/new` (title, company, location, sector, visa sponsorship, dates, description, apply URL)
+- Jobs are saved with `source: admin` → mobile app filters `.eq('source', 'admin')`
+
+**What they cannot do:** edit/delete jobs, open other admin sections, or call non-jobs admin APIs (403).
+
+After creating a job, they return to the jobs list with a success message. Full admins still get the job detail page.

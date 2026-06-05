@@ -3,15 +3,11 @@
  * Signing is done in API route (Node) with crypto.createHmac.
  */
 
+import type { AdminRole } from '@/lib/admin-roles'
+import { decodeAdminSessionPayload } from '@/lib/admin-session-payload'
+
 const COOKIE_NAME = 'admin_session'
 const MAX_AGE_MS = 24 * 60 * 60 * 1000 // 24h
-
-function base64UrlEncode(s: string): string {
-  const bytes = new TextEncoder().encode(s)
-  let binary = ''
-  for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i])
-  return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
-}
 
 function base64UrlDecode(s: string): string {
   const base64 = s.replace(/-/g, '+').replace(/_/g, '/')
@@ -47,7 +43,6 @@ export function getAdminSessionCookie(request: Request): string | null {
   const match = cookieHeader.match(new RegExp(`(?:^|;\\s*)${COOKIE_NAME}=([^;]*)`))
   if (!match) return null
   const raw = match[1].trim()
-  // Next.js / browsers may encode cookie values; decode so we get the raw token back
   try {
     return decodeURIComponent(raw)
   } catch {
@@ -55,28 +50,36 @@ export function getAdminSessionCookie(request: Request): string | null {
   }
 }
 
+export async function getAdminSession(request: Request): Promise<{ valid: boolean; role: AdminRole }> {
+  const secret = process.env.ADMIN_SESSION_SECRET
+  if (!secret) return { valid: false, role: 'full' }
+
+  const token = getAdminSessionCookie(request)
+  if (!token) return { valid: false, role: 'full' }
+
+  const dot = token.indexOf('.')
+  if (dot === -1) return { valid: false, role: 'full' }
+
+  const payloadBase64 = token.slice(0, dot)
+  const sigHex = token.slice(dot + 1)
+
+  try {
+    const payload = decodeAdminSessionPayload(token, base64UrlDecode)
+    if (!payload) return { valid: false, role: 'full' }
+    const expectedSig = await hmacSha256Hex(payloadBase64, secret)
+    if (sigHex !== expectedSig) return { valid: false, role: 'full' }
+    return { valid: true, role: payload.role }
+  } catch {
+    return { valid: false, role: 'full' }
+  }
+}
+
 /**
  * Verify the admin session token. Returns true if valid and not expired.
  */
 export async function verifyAdminSession(request: Request): Promise<boolean> {
-  const secret = process.env.ADMIN_SESSION_SECRET
-  if (!secret) return false
-  const token = getAdminSessionCookie(request)
-  if (!token) return false
-  const dot = token.indexOf('.')
-  if (dot === -1) return false
-  const payloadBase64 = token.slice(0, dot)
-  const sigHex = token.slice(dot + 1)
-  try {
-    const payloadJson = base64UrlDecode(payloadBase64)
-    const payload = JSON.parse(payloadJson) as { admin?: boolean; exp?: number }
-    if (!payload.admin || typeof payload.exp !== 'number') return false
-    if (payload.exp < Date.now()) return false
-    const expectedSig = await hmacSha256Hex(payloadBase64, secret)
-    return sigHex === expectedSig
-  } catch {
-    return false
-  }
+  const session = await getAdminSession(request)
+  return session.valid
 }
 
 export { COOKIE_NAME, MAX_AGE_MS }

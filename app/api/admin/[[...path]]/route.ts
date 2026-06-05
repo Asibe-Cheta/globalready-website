@@ -1,11 +1,11 @@
 import { adminApiFetch } from '@/lib/admin-api';
-import { verifyAdminSessionNode, type VerifyResult } from '@/lib/admin-session-sign';
+import { isAdminApiPathAllowedForRole } from '@/lib/admin-roles';
+import { getAdminRoleFromRequest, verifyAdminSessionNode } from '@/lib/admin-session-sign';
 import { NextRequest, NextResponse } from 'next/server';
 
 export const runtime = 'nodejs';
 
-/** Require valid admin session; returns 401 response or null if valid. Uses Node crypto so it matches login signing. */
-function requireAdmin(req: NextRequest): NextResponse | null {
+function requireAdmin(req: NextRequest, path: string, method: string): NextResponse | null {
   const result = verifyAdminSessionNode(req);
   if (result !== 'ok') {
     const message =
@@ -19,6 +19,15 @@ function requireAdmin(req: NextRequest): NextResponse | null {
       { status: 401 }
     );
   }
+
+  const role = getAdminRoleFromRequest(req) ?? 'full';
+  if (!isAdminApiPathAllowedForRole(path, method, role)) {
+    return NextResponse.json(
+      { error: 'You do not have permission to perform this action.' },
+      { status: 403 }
+    );
+  }
+
   return null;
 }
 
@@ -33,7 +42,7 @@ export async function GET(
   try {
     const { path: pathSegments } = await context.params;
     const path = Array.isArray(pathSegments) ? pathSegments.join('/') || '' : '';
-    const authError = requireAdmin(_req);
+    const authError = requireAdmin(_req, path, 'GET');
     if (authError) return authError;
     const url = new URL(_req.url);
     const search = url.searchParams.toString();
@@ -56,7 +65,7 @@ export async function POST(
   try {
     const { path: pathSegments } = await context.params;
     const path = Array.isArray(pathSegments) ? pathSegments.join('/') : '';
-    const authError = requireAdmin(req);
+    const authError = requireAdmin(req, path, 'POST');
     if (authError) return authError;
     const body = await req.json().catch(() => ({}));
     const res = await adminApiFetch(path, { method: 'POST', body });
@@ -75,7 +84,7 @@ export async function PUT(
   try {
     const { path: pathSegments } = await context.params;
     const path = Array.isArray(pathSegments) ? pathSegments.join('/') : '';
-    const authError = requireAdmin(req);
+    const authError = requireAdmin(req, path, 'PUT');
     if (authError) return authError;
     const body = await req.json().catch(() => ({}));
     const res = await adminApiFetch(path, { method: 'PUT', body });
@@ -94,7 +103,7 @@ export async function PATCH(
   try {
     const { path: pathSegments } = await context.params;
     const path = Array.isArray(pathSegments) ? pathSegments.join('/') : '';
-    const authError = requireAdmin(req);
+    const authError = requireAdmin(req, path, 'PATCH');
     if (authError) return authError;
     const body = await req.json().catch(() => ({}));
     const res = await adminApiFetch(path, { method: 'PATCH', body });
@@ -113,7 +122,7 @@ export async function DELETE(
   try {
     const { path: pathSegments } = await context.params;
     const path = Array.isArray(pathSegments) ? pathSegments.join('/') : '';
-    const authError = requireAdmin(_req);
+    const authError = requireAdmin(_req, path, 'DELETE');
     if (authError) return authError;
     const res = await adminApiFetch(path, { method: 'DELETE' });
     const data = await res.json().catch(() => ({}));

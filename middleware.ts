@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
-import { verifyAdminSession } from '@/lib/admin-session'
+import { isAdminPageAllowedForRole } from '@/lib/admin-roles'
+import { getAdminSession } from '@/lib/admin-session'
 
 const ADMIN_LOGIN = '/admin/login'
 
@@ -11,18 +12,21 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next()
   }
 
-  // Protect /admin (all admin pages except login)
   if (pathname.startsWith('/admin')) {
-    const valid = await verifyAdminSession(request)
-    if (!valid) {
+    const session = await getAdminSession(request)
+    if (!session.valid) {
       const loginUrl = new URL(ADMIN_LOGIN, request.url)
       loginUrl.searchParams.set('from', pathname)
       return NextResponse.redirect(loginUrl)
     }
+
+    if (!isAdminPageAllowedForRole(pathname, session.role)) {
+      return NextResponse.redirect(new URL('/admin/jobs', request.url))
+    }
+
     return NextResponse.next()
   }
 
-  // /api/admin is protected in the API route (Node) so cookies are available there
   return NextResponse.next()
 }
 

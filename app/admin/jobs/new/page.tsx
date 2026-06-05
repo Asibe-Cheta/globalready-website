@@ -1,9 +1,10 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeft, Loader2 } from 'lucide-react'
+import type { AdminRole } from '@/lib/admin-roles'
 
 function parseRequirements(s: string): Record<string, unknown> {
   if (!s.trim()) return {}
@@ -17,6 +18,7 @@ function parseRequirements(s: string): Record<string, unknown> {
 
 export default function NewJobPage() {
   const router = useRouter()
+  const [role, setRole] = useState<AdminRole>('full')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
   const [form, setForm] = useState({
@@ -31,10 +33,20 @@ export default function NewJobPage() {
     description: '',
     apply_url: '',
     posted_date: '',
+    expires_at: '',
     requirements: '{}',
     is_active: true,
     is_featured: false,
   })
+
+  useEffect(() => {
+    fetch('/api/admin/me', { credentials: 'include' })
+      .then((res) => res.json().catch(() => ({})))
+      .then((data) => {
+        if (data.role === 'jobs' || data.role === 'full') setRole(data.role)
+      })
+      .catch(() => {})
+  }, [])
 
   function update(key: string, value: string | boolean) {
     setForm((f) => ({ ...f, [key]: value }))
@@ -45,6 +57,7 @@ export default function NewJobPage() {
     setError('')
     if (!form.title.trim()) { setError('Title is required'); return }
     if (!form.company.trim()) { setError('Company is required'); return }
+    if (!form.apply_url.trim()) { setError('Apply URL is required'); return }
     setSaving(true)
     try {
       const body = {
@@ -59,9 +72,11 @@ export default function NewJobPage() {
         description: form.description.trim() || null,
         apply_url: form.apply_url.trim() || null,
         posted_date: form.posted_date ? new Date(form.posted_date).toISOString() : undefined,
-        requirements: parseRequirements(form.requirements),
+        expires_at: form.expires_at ? new Date(form.expires_at).toISOString() : null,
+        requirements: role === 'full' ? parseRequirements(form.requirements) : {},
         is_active: form.is_active,
-        is_featured: form.is_featured,
+        is_featured: role === 'full' ? form.is_featured : false,
+        source: 'admin',
       }
       const res = await fetch('/api/admin/jobs', {
         method: 'POST',
@@ -71,7 +86,11 @@ export default function NewJobPage() {
       })
       const data = await res.json().catch(() => ({}))
       if (!res.ok) throw new Error(data.error || 'Failed to create job')
-      router.push(`/admin/jobs/${data.id}`)
+      if (role === 'jobs') {
+        router.push('/admin/jobs?created=1')
+      } else {
+        router.push(`/admin/jobs/${data.id}`)
+      }
       router.refresh()
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Failed to create job')
@@ -85,7 +104,12 @@ export default function NewJobPage() {
       <Link href="/admin/jobs" className="inline-flex items-center gap-2 text-slate-400 hover:text-white">
         <ArrowLeft className="w-4 h-4" /> Back to jobs
       </Link>
-      <h1 className="text-3xl font-bold text-white">Add job</h1>
+      <div>
+        <h1 className="text-3xl font-bold text-white">Add job</h1>
+        <p className="text-slate-400 mt-2">
+          Jobs you add here are saved to Supabase with <code className="text-slate-300">source: admin</code> and appear on the mobile app job board.
+        </p>
+      </div>
 
       {error && <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-4 text-red-400">{error}</div>}
 
@@ -123,8 +147,8 @@ export default function NewJobPage() {
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-300 mb-1">Sector</label>
-              <input value={form.sector} onChange={(e) => update('sector', e.target.value)} placeholder="e.g. Technology" className="w-full px-4 py-2 bg-[#223249] border border-slate-700/50 rounded-lg text-white" />
+              <label className="block text-sm font-medium text-slate-300 mb-1">Sector / category</label>
+              <input value={form.sector} onChange={(e) => update('sector', e.target.value)} placeholder="e.g. Technology, Healthcare" className="w-full px-4 py-2 bg-[#223249] border border-slate-700/50 rounded-lg text-white" />
             </div>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -139,42 +163,54 @@ export default function NewJobPage() {
             </div>
             <div>
               <label className="block text-sm font-medium text-slate-300 mb-1">Salary range</label>
-              <input value={form.salary_range} onChange={(e) => update('salary_range', e.target.value)} placeholder="e.g. $90k - $130k" className="w-full px-4 py-2 bg-[#223249] border border-slate-700/50 rounded-lg text-white" />
+              <input value={form.salary_range} onChange={(e) => update('salary_range', e.target.value)} placeholder="e.g. €45k - €60k" className="w-full px-4 py-2 bg-[#223249] border border-slate-700/50 rounded-lg text-white" />
             </div>
           </div>
           <div>
             <label className="block text-sm font-medium text-slate-300 mb-1">Description</label>
-            <textarea value={form.description} onChange={(e) => update('description', e.target.value)} rows={4} className="w-full px-4 py-2 bg-[#223249] border border-slate-700/50 rounded-lg text-white" />
+            <textarea value={form.description} onChange={(e) => update('description', e.target.value)} rows={6} className="w-full px-4 py-2 bg-[#223249] border border-slate-700/50 rounded-lg text-white" placeholder="Role summary, requirements, and what applicants should know." />
           </div>
           <div>
-            <label className="block text-sm font-medium text-slate-300 mb-1">Apply URL</label>
-            <input type="url" value={form.apply_url} onChange={(e) => update('apply_url', e.target.value)} className="w-full px-4 py-2 bg-[#223249] border border-slate-700/50 rounded-lg text-white" />
+            <label className="block text-sm font-medium text-slate-300 mb-1">Apply URL *</label>
+            <input type="url" value={form.apply_url} onChange={(e) => update('apply_url', e.target.value)} placeholder="https://..." className="w-full px-4 py-2 bg-[#223249] border border-slate-700/50 rounded-lg text-white" required />
+            <p className="text-xs text-slate-500 mt-1">Where users go when they tap Apply in the app.</p>
           </div>
-          <div>
-            <label className="block text-sm font-medium text-slate-300 mb-1">Posted date</label>
-            <input type="date" value={form.posted_date} onChange={(e) => update('posted_date', e.target.value)} className="w-full px-4 py-2 bg-[#223249] border border-slate-700/50 rounded-lg text-white" />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-slate-300 mb-1">Posted date</label>
+              <input type="date" value={form.posted_date} onChange={(e) => update('posted_date', e.target.value)} className="w-full px-4 py-2 bg-[#223249] border border-slate-700/50 rounded-lg text-white" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-300 mb-1">Listing ends (optional)</label>
+              <input type="date" value={form.expires_at} onChange={(e) => update('expires_at', e.target.value)} className="w-full px-4 py-2 bg-[#223249] border border-slate-700/50 rounded-lg text-white" />
+              <p className="text-xs text-slate-500 mt-1">When the job should stop showing (if known).</p>
+            </div>
           </div>
-          <div>
-            <label className="block text-sm font-medium text-slate-300 mb-1">Requirements (JSON)</label>
-            <textarea value={form.requirements} onChange={(e) => update('requirements', e.target.value)} rows={6} className="w-full px-4 py-2 bg-[#223249] border border-slate-700/50 rounded-lg text-white font-mono text-sm" placeholder='{"responsibilities":[],"requirements":[],"experience_level":"","competition_level":""}' />
-          </div>
+          {role === 'full' && (
+            <div>
+              <label className="block text-sm font-medium text-slate-300 mb-1">Requirements (JSON)</label>
+              <textarea value={form.requirements} onChange={(e) => update('requirements', e.target.value)} rows={6} className="w-full px-4 py-2 bg-[#223249] border border-slate-700/50 rounded-lg text-white font-mono text-sm" placeholder='{"responsibilities":[],"requirements":[],"experience_level":"","competition_level":""}' />
+            </div>
+          )}
         </div>
 
-        <div className="bg-[#1a2432] border border-slate-700/50 rounded-2xl p-6 flex gap-6">
+        <div className="bg-[#1a2432] border border-slate-700/50 rounded-2xl p-6 flex flex-wrap gap-6">
           <label className="flex items-center gap-2 text-slate-300">
             <input type="checkbox" checked={form.is_active} onChange={(e) => update('is_active', e.target.checked)} className="rounded border-slate-600 bg-[#223249] text-[#0d6cf2]" />
-            Active
+            Active (visible on mobile job board)
           </label>
-          <label className="flex items-center gap-2 text-slate-300">
-            <input type="checkbox" checked={form.is_featured} onChange={(e) => update('is_featured', e.target.checked)} className="rounded border-slate-600 bg-[#223249] text-[#0d6cf2]" />
-            Featured
-          </label>
+          {role === 'full' && (
+            <label className="flex items-center gap-2 text-slate-300">
+              <input type="checkbox" checked={form.is_featured} onChange={(e) => update('is_featured', e.target.checked)} className="rounded border-slate-600 bg-[#223249] text-[#0d6cf2]" />
+              Featured
+            </label>
+          )}
         </div>
 
         <div className="flex gap-4">
           <button type="submit" disabled={saving} className="px-6 py-2 bg-[#0d6cf2] text-white rounded-lg font-medium hover:bg-blue-600 disabled:opacity-50 flex items-center gap-2">
             {saving ? <Loader2 className="w-5 h-5 animate-spin" /> : null}
-            Create job
+            Publish job
           </button>
           <Link href="/admin/jobs" className="px-6 py-2 bg-[#223249] text-slate-300 rounded-lg font-medium hover:bg-[#223249]/80">
             Cancel

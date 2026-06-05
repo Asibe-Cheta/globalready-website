@@ -1,8 +1,10 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { Suspense, useEffect, useState } from 'react'
 import Link from 'next/link'
+import { useSearchParams } from 'next/navigation'
 import { Plus, Pencil, Eye, Briefcase, Loader2 } from 'lucide-react'
+import type { AdminRole } from '@/lib/admin-roles'
 
 type Job = {
   id: string
@@ -25,12 +27,36 @@ type Job = {
 type Pagination = { page: number; limit: number; total: number }
 
 export default function AdminJobsPage() {
+  return (
+    <Suspense fallback={
+      <div className="p-12 flex items-center justify-center">
+        <Loader2 className="w-8 h-8 text-slate-400 animate-spin" />
+      </div>
+    }>
+      <AdminJobsContent />
+    </Suspense>
+  )
+}
+
+function AdminJobsContent() {
+  const searchParams = useSearchParams()
   const [jobs, setJobs] = useState<Job[]>([])
   const [pagination, setPagination] = useState<Pagination>({ page: 1, limit: 20, total: 0 })
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [includeInactive, setIncludeInactive] = useState(false)
   const [search, setSearch] = useState('')
+  const [role, setRole] = useState<AdminRole>('full')
+  const created = searchParams.get('created') === '1'
+
+  useEffect(() => {
+    fetch('/api/admin/me', { credentials: 'include' })
+      .then((res) => res.json().catch(() => ({})))
+      .then((data) => {
+        if (data.role === 'jobs' || data.role === 'full') setRole(data.role)
+      })
+      .catch(() => {})
+  }, [])
 
   useEffect(() => {
     let cancelled = false
@@ -66,7 +92,11 @@ export default function AdminJobsPage() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold text-white mb-2">Jobs</h1>
-          <p className="text-slate-400">Manage job listings. Data is synced to the mobile app Browse Jobs flow.</p>
+          <p className="text-slate-400">
+            {role === 'jobs'
+              ? 'Add new job listings here. They appear in the mobile app job board (admin-sourced jobs).'
+              : 'Manage job listings. Data is synced to the mobile app Browse Jobs flow.'}
+          </p>
           <p className="text-slate-500 text-xs mt-2">
             Some opportunities are hosted on third-party platforms and may have their own access requirements, subscriptions, or fees.
           </p>
@@ -79,6 +109,12 @@ export default function AdminJobsPage() {
           Add job
         </Link>
       </div>
+
+      {created && (
+        <div className="bg-green-500/10 border border-green-500/30 rounded-xl p-4 text-green-400">
+          Job created successfully. It will show on the mobile app job board shortly.
+        </div>
+      )}
 
       {error && (
         <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-4 text-red-400">{error}</div>
@@ -127,7 +163,9 @@ export default function AdminJobsPage() {
                   <th className="text-left py-3 px-4 text-slate-400 font-medium">Type</th>
                   <th className="text-left py-3 px-4 text-slate-400 font-medium">Status</th>
                   <th className="text-left py-3 px-4 text-slate-400 font-medium">Views / Apps</th>
-                  <th className="text-right py-3 px-4 text-slate-400 font-medium">Actions</th>
+                  {role === 'full' && (
+                    <th className="text-right py-3 px-4 text-slate-400 font-medium">Actions</th>
+                  )}
                 </tr>
               </thead>
               <tbody>
@@ -148,14 +186,16 @@ export default function AdminJobsPage() {
                       </span>
                     </td>
                     <td className="py-3 px-4 text-slate-300">{job.view_count ?? 0} / {job.application_count ?? 0}</td>
-                    <td className="py-3 px-4 text-right">
-                      <Link href={`/admin/jobs/${job.id}`} className="text-slate-400 hover:text-white inline-flex items-center gap-1 mr-3">
-                        <Eye className="w-4 h-4" /> View
-                      </Link>
-                      <Link href={`/admin/jobs/${job.id}/edit`} className="text-slate-400 hover:text-white inline-flex items-center gap-1">
-                        <Pencil className="w-4 h-4" /> Edit
-                      </Link>
-                    </td>
+                    {role === 'full' && (
+                      <td className="py-3 px-4 text-right">
+                        <Link href={`/admin/jobs/${job.id}`} className="text-slate-400 hover:text-white inline-flex items-center gap-1 mr-3">
+                          <Eye className="w-4 h-4" /> View
+                        </Link>
+                        <Link href={`/admin/jobs/${job.id}/edit`} className="text-slate-400 hover:text-white inline-flex items-center gap-1">
+                          <Pencil className="w-4 h-4" /> Edit
+                        </Link>
+                      </td>
+                    )}
                   </tr>
                 ))}
               </tbody>
