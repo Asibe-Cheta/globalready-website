@@ -43,7 +43,8 @@ export default function AdminLayout({
   children: React.ReactNode
 }) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
-  const [role, setRole] = useState<AdminRole>('full')
+  const [role, setRole] = useState<AdminRole | null>(null)
+  const [roleLoaded, setRoleLoaded] = useState(false)
   const pathname = usePathname()
   const isLoginPage = pathname === '/admin/login'
 
@@ -55,13 +56,24 @@ export default function AdminLayout({
       .then((data) => {
         if (data.role === 'jobs' || data.role === 'full') {
           setRole(data.role)
+        } else {
+          setRole('full')
         }
       })
-      .catch(() => {})
+      .catch(() => setRole('full'))
+      .finally(() => setRoleLoaded(true))
   }, [isLoginPage, pathname])
 
   if (isLoginPage) {
     return <>{children}</>
+  }
+
+  if (!roleLoaded || !role) {
+    return (
+      <div className="min-h-screen bg-[#101722] flex items-center justify-center">
+        <div className="text-slate-400 text-sm">Loading admin…</div>
+      </div>
+    )
   }
 
   const navigation = allNavigation.filter((item) => item.roles.includes(role))
