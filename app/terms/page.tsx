@@ -3,7 +3,7 @@ import Link from 'next/link'
 import Navigation from '@/components/Navigation'
 import Footer from '@/components/Footer'
 import { FileText } from 'lucide-react'
-import { OPERATOR_IDENTITY, AI_DISCLOSURE } from '@/lib/legal'
+import { OPERATOR_IDENTITY, AI_DISCLOSURE, AI_THIRD_PARTY_NOTICE, AI_VOICE_NOTICE } from '@/lib/legal'
 import { pricingPlans } from '@/lib/pricing-plans'
 
 export const metadata: Metadata = {
@@ -23,7 +23,7 @@ export default function TermsPage() {
             </div>
             <div>
               <h1 className="text-3xl font-bold text-slate-900 dark:text-white">Terms of Service</h1>
-              <p className="text-slate-600 dark:text-slate-400 text-sm mt-0.5">Last updated: April 2026</p>
+              <p className="text-slate-600 dark:text-slate-400 text-sm mt-0.5">Last updated: May 2026</p>
             </div>
           </div>
 
@@ -58,7 +58,12 @@ export default function TermsPage() {
               Cancellation stops renewal at the end of the current billing period.
             </p>
 
-            <h2 className="text-xl font-semibold text-slate-900 dark:text-white mt-8">AI Features Disclaimer</h2>
+            <h2 className="text-xl font-semibold text-slate-900 dark:text-white mt-8">AI-Powered Tools</h2>
+            <p>
+              GlobalReady includes AI-powered tools such as CV tailoring, job-fit analysis, cover letter generation, and interview feedback. These features may use third-party AI providers, including <strong>Google (Gemini)</strong>, to process limited content you submit in order to generate outputs within the Service.
+            </p>
+            <p>{AI_THIRD_PARTY_NOTICE}</p>
+            <p>{AI_VOICE_NOTICE}</p>
             <p>{AI_DISCLOSURE}</p>
 
             <h2 className="text-xl font-semibold text-slate-900 dark:text-white mt-8">Acceptable Use</h2>

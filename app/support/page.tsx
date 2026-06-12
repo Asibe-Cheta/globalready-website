@@ -58,6 +58,13 @@ export default function SupportPage() {
                   <p className="mt-1">Open the app, go to your profile or CV section, and edit the fields you want to change. Changes are saved automatically.</p>
                 </li>
                 <li>
+                  <strong className="text-slate-800 dark:text-slate-200">How do AI features work?</strong>
+                  <p className="mt-1">
+                    CV tailoring, job-fit checks, cover letters, and interview feedback are powered by third-party AI (including Google Gemini). Live mock interview voice sessions use Vapi. AI outputs are for training and informational purposes only — see our{' '}
+                    <Link href="/privacy" className="text-primary hover:underline">Privacy Policy</Link> for details.
+                  </p>
+                </li>
+                <li>
                   <strong className="text-slate-800 dark:text-slate-200">I want to delete my account.</strong>
                   <p className="mt-1">Email us at contact@globalready.tech with the subject &quot;Account deletion&quot; and we’ll process your request in line with our privacy policy.</p>
                 </li>

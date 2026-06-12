@@ -3,7 +3,7 @@ import Link from 'next/link'
 import Navigation from '@/components/Navigation'
 import Footer from '@/components/Footer'
 import { Shield } from 'lucide-react'
-import { OPERATOR_IDENTITY } from '@/lib/legal'
+import { AI_PROCESSORS, AI_THIRD_PARTY_NOTICE, OPERATOR_IDENTITY } from '@/lib/legal'
 
 export const metadata: Metadata = {
   title: 'Privacy Policy | GlobalReady',
@@ -22,7 +22,7 @@ export default function PrivacyPage() {
             </div>
             <div>
               <h1 className="text-3xl font-bold text-slate-900 dark:text-white">Privacy Policy</h1>
-              <p className="text-slate-600 dark:text-slate-400 text-sm mt-0.5">Last updated: April 2026</p>
+              <p className="text-slate-600 dark:text-slate-400 text-sm mt-0.5">Last updated: May 2026</p>
             </div>
           </div>
 
@@ -44,6 +44,7 @@ export default function PrivacyPage() {
               <li><strong>Email address</strong> — We collect your email when you create an account or contact us.</li>
               <li><strong>Name</strong> — We collect your name for your profile and to personalize the Service.</li>
               <li><strong>Photos (profile picture)</strong> — You may upload a profile picture; we store and display it as part of your account.</li>
+              <li><strong>CV and career content</strong> — When you use CV tools, job-fit checks, cover letters, or interview features, you may provide résumé text, work history, job descriptions, and related career information.</li>
               <li><strong>Payment information</strong> — Payments are processed by <strong>Stripe</strong>. We do not store your full card details on our servers. Stripe collects and processes payment information in accordance with their privacy policy. We may receive limited transaction data (e.g. last four digits, billing country) for support and receipts.</li>
               <li><strong>Subscription and plan information</strong> — We may store your selected paid plan, subscription status, access expiry or renewal date, Stripe customer ID, and related billing metadata so the website and mobile app can recognize your access.</li>
             </ul>
@@ -53,14 +54,59 @@ export default function PrivacyPage() {
               We may collect device information, IP address, and usage data (e.g. pages visited, features used) to improve the Service and security.
             </p>
 
+            <h2 className="text-xl font-semibold text-slate-900 dark:text-white mt-8">AI-Powered Features</h2>
+            <p>
+              GlobalReady offers AI-assisted features in the mobile app, including CV tailoring, job-fit analysis, professional summaries, cover letter generation, work-experience suggestions, interview feedback, and job matching. These text-based AI features may be processed using <strong>Google Gemini</strong> on our behalf via secure backend services.
+            </p>
+            <p>{AI_THIRD_PARTY_NOTICE}</p>
+            <p>
+              <strong>Voice interviews:</strong> Live mock interview voice sessions use <strong>Vapi</strong>, not Google Gemini. Only post-session feedback reports from interview transcripts may be processed with Google Gemini.
+            </p>
+
+            <h3 className="text-lg font-medium text-slate-900 dark:text-white mt-6">Data sent to AI providers</h3>
+            <p>
+              Depending on the feature you use, we may send limited content to our AI processors, such as:
+            </p>
+            <ul className="list-disc pl-6 space-y-2">
+              <li>CV or résumé content and structured career information</li>
+              <li>Job descriptions and role details you choose to analyze</li>
+              <li>Interview transcripts (for feedback generation only, not for live voice sessions)</li>
+            </ul>
+            <p>
+              This data is processed to generate outputs for you within the Service. We do not sell this information, and we use it only to operate and improve the relevant features.
+            </p>
+
             <h2 className="text-xl font-semibold text-slate-900 dark:text-white mt-8">How We Use Your Information</h2>
             <p>
               We use the information we collect to provide, maintain, and improve the Service; to process transactions; to communicate with you; to personalize your experience; and to comply with legal obligations.
             </p>
 
+            <h2 className="text-xl font-semibold text-slate-900 dark:text-white mt-8">Third-Party Service Providers</h2>
+            <p>
+              We use trusted third parties to help us operate the Service. They process data only as needed to perform their role:
+            </p>
+            <div className="overflow-x-auto not-prose">
+              <table className="w-full text-sm border border-slate-200 dark:border-slate-700 rounded-lg overflow-hidden">
+                <thead>
+                  <tr className="bg-slate-100 dark:bg-slate-800/80">
+                    <th className="text-left py-3 px-4 font-semibold text-slate-900 dark:text-white">Service</th>
+                    <th className="text-left py-3 px-4 font-semibold text-slate-900 dark:text-white">Purpose</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-200 dark:divide-slate-700">
+                  {AI_PROCESSORS.map((row) => (
+                    <tr key={row.service}>
+                      <td className="py-3 px-4 text-slate-800 dark:text-slate-200 font-medium">{row.service}</td>
+                      <td className="py-3 px-4 text-slate-600 dark:text-slate-400">{row.purpose}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
             <h2 className="text-xl font-semibold text-slate-900 dark:text-white mt-8">Data Sharing</h2>
             <p>
-              We do not sell your personal information. We may share data with service providers (e.g. Stripe for payments, hosting providers) only as needed to operate the Service. We may disclose information if required by law or to protect our rights and safety.
+              We do not sell your personal information. We may share data with the service providers listed above only as needed to operate the Service. We may disclose information if required by law or to protect our rights and safety.
             </p>
 
             <h2 className="text-xl font-semibold text-slate-900 dark:text-white mt-8">Security</h2>
