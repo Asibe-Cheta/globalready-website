@@ -1,69 +1,49 @@
 'use client'
 
 import { useSearchParams } from 'next/navigation'
-import { useState, Suspense, useEffect, useCallback, useRef } from 'react'
+import { useState, Suspense, useRef } from 'react'
 import Link from 'next/link'
 import Navigation from '@/components/Navigation'
 import Footer from '@/components/Footer'
-import { Check, CreditCard, ExternalLink, Loader2 } from 'lucide-react'
+import { Check, CreditCard, Loader2 } from 'lucide-react'
 import { OPERATOR_IDENTITY } from '@/lib/legal'
 import { getPricingPlan, pricingPlans, type PlanId } from '@/lib/pricing-plans'
-import { buildSelarCheckoutUrl, getSelarProductCode, isSelarConfigured } from '@/lib/selar-checkout'
 
-function PlanPaymentButtons({
+function StripePayButton({
   planId,
   onStripe,
-  onSelar,
-  stripeLoading,
-  selarDisabled,
+  loading,
   compact = false,
 }: {
   planId: PlanId
   onStripe: (planId: PlanId) => void
-  onSelar: (planId: PlanId) => void
-  stripeLoading?: boolean
-  selarDisabled?: boolean
+  loading?: boolean
   compact?: boolean
 }) {
-  const showSelar = isSelarConfigured(planId)
   const sizeClass = compact ? 'text-xs sm:text-sm py-2.5' : 'text-sm sm:text-base py-3'
 
   return (
-    <div
-      className={`mt-4 flex flex-col gap-2.5 ${compact ? '' : 'sm:flex-row sm:gap-3'}`}
-      onClick={(event) => event.stopPropagation()}
-      onKeyDown={(event) => event.stopPropagation()}
+    <button
+      type="button"
+      onClick={(event) => {
+        event.stopPropagation()
+        onStripe(planId)
+      }}
+      disabled={loading}
+      className={`btn-stripe w-full mt-4 flex items-center justify-center gap-2 ${sizeClass}`}
     >
-      <button
-        type="button"
-        onClick={() => onStripe(planId)}
-        disabled={stripeLoading}
-        className={`btn-stripe w-full flex items-center justify-center gap-2 ${sizeClass}`}
-      >
-        {stripeLoading ? (
-          <>
-            <Loader2 className="h-4 w-4 animate-spin shrink-0" />
-            <span>Opening Stripe…</span>
-          </>
-        ) : (
-          <>
-            <CreditCard className="h-4 w-4 shrink-0" aria-hidden />
-            <span className="font-semibold">Pay with Stripe</span>
-          </>
-        )}
-      </button>
-      {showSelar && (
-        <button
-          type="button"
-          onClick={() => onSelar(planId)}
-          disabled={selarDisabled}
-          className={`btn-selar w-full flex items-center justify-center gap-2 ${sizeClass}`}
-        >
-          <span className="font-semibold">Pay with Selar</span>
-          <ExternalLink className="h-4 w-4 shrink-0 opacity-90" aria-hidden />
-        </button>
+      {loading ? (
+        <>
+          <Loader2 className="h-4 w-4 animate-spin shrink-0" />
+          <span>Opening Stripe…</span>
+        </>
+      ) : (
+        <>
+          <CreditCard className="h-4 w-4 shrink-0" aria-hidden />
+          <span className="font-semibold">Pay with Stripe</span>
+        </>
       )}
-    </div>
+    </button>
   )
 }
 
@@ -76,8 +56,6 @@ function UpgradeContent() {
   const [error, setError] = useState<string | null>(null)
   const [email, setEmail] = useState(emailFromUrl)
   const [emailError, setEmailError] = useState('')
-  const [userEmail, setUserEmail] = useState<string | null>(null)
-  const [userEmailLoading, setUserEmailLoading] = useState(false)
   const emailInputRef = useRef<HTMLInputElement>(null)
   const checkoutSectionRef = useRef<HTMLDivElement>(null)
 
@@ -85,8 +63,6 @@ function UpgradeContent() {
   const recurringDisclosure = selectedPlan.checkoutMode === 'subscription'
     ? 'Your subscription renews automatically unless cancelled before your next billing date.'
     : 'This is a one-time payment for the selected access period and does not automatically renew.'
-  const selarEmail = uid ? userEmail : email.trim() || null
-  const selarDisabled = Boolean(uid && userEmailLoading)
 
   function promptForEmail(planId: PlanId) {
     setSelectedPlanId(planId)
@@ -94,37 +70,6 @@ function UpgradeContent() {
     checkoutSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
     window.setTimeout(() => emailInputRef.current?.focus(), 300)
   }
-
-  useEffect(() => {
-    if (!uid) return
-
-    let cancelled = false
-    setUserEmailLoading(true)
-
-    fetch(`/api/upgrade/user-email?uid=${encodeURIComponent(uid)}`)
-      .then((res) => res.json().catch(() => ({})))
-      .then((data) => {
-        if (!cancelled && typeof data.email === 'string') {
-          setUserEmail(data.email)
-        }
-      })
-      .catch(() => {})
-      .finally(() => {
-        if (!cancelled) setUserEmailLoading(false)
-      })
-
-    return () => {
-      cancelled = true
-    }
-  }, [uid])
-
-  const handleSelarPay = useCallback((planId: PlanId) => {
-    const productCode = getSelarProductCode(planId)
-    if (!productCode) return
-
-    const checkoutUrl = buildSelarCheckoutUrl(productCode, selarEmail)
-    window.open(checkoutUrl, '_blank', 'noopener,noreferrer')
-  }, [selarEmail])
 
   async function startStripeCheckout(planId: PlanId) {
     if (!uid && !email.trim()) {
@@ -219,12 +164,10 @@ function UpgradeContent() {
                   <span className="text-2xl font-bold text-[#0d6cf2]">{plan.price}</span>{' '}
                   <span className="text-sm text-slate-500 dark:text-slate-400">{plan.period}</span>
                 </p>
-                <PlanPaymentButtons
+                <StripePayButton
                   planId={plan.id}
                   onStripe={startStripeCheckout}
-                  onSelar={handleSelarPay}
-                  stripeLoading={stripeLoadingPlanId === plan.id}
-                  selarDisabled={selarDisabled}
+                  loading={stripeLoadingPlanId === plan.id}
                   compact
                 />
               </div>
@@ -247,18 +190,11 @@ function UpgradeContent() {
               {error && (
                 <p className="text-red-500 dark:text-red-400 text-sm mb-4 text-center">{error}</p>
               )}
-              <PlanPaymentButtons
+              <StripePayButton
                 planId={selectedPlanId}
                 onStripe={startStripeCheckout}
-                onSelar={handleSelarPay}
-                stripeLoading={stripeLoadingPlanId === selectedPlanId}
-                selarDisabled={selarDisabled}
+                loading={stripeLoadingPlanId === selectedPlanId}
               />
-              {userEmailLoading && isSelarConfigured(selectedPlanId) && (
-                <p className="mt-3 text-xs text-slate-500 dark:text-slate-400 text-center">
-                  Loading your account email for Selar checkout…
-                </p>
-              )}
             </div>
           ) : (
             <div ref={checkoutSectionRef} className="rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#1a2432] p-8">
@@ -286,11 +222,10 @@ function UpgradeContent() {
               <p className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-3 text-center">
                 Pay for <span className="text-[#0d6cf2]">{selectedPlan.name}</span> — {selectedPlan.price} {selectedPlan.period}
               </p>
-              <PlanPaymentButtons
+              <StripePayButton
                 planId={selectedPlanId}
                 onStripe={startStripeCheckout}
-                onSelar={handleSelarPay}
-                stripeLoading={stripeLoadingPlanId === selectedPlanId}
+                loading={stripeLoadingPlanId === selectedPlanId}
               />
               <p className="text-slate-500 dark:text-slate-400 text-xs mt-4 text-center">
                 No account yet? <Link href="/#pricing" className="text-primary hover:underline">Sign up in the app</Link> first, then return here.
